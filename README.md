@@ -109,10 +109,10 @@ src/app
 2. O preset **Angular** é detectado automaticamente. O `vercel.json` já define o comando de build, a pasta de saída e o redirecionamento das rotas para o `index.html`, para que recarregar a página em `/produtos/1/editar` funcione.
 3. Clique em **Deploy**.
 
-A API libera CORS para `https://product-module-interface*.vercel.app`. Se o painel for publicado em outro domínio, adicione-o à variável `CORS_ALLOWED_ORIGINS` do serviço da API no Render.
+A API libera CORS para `https://productmoduleinterface*.vercel.app` e `https://product-module-interface*.vercel.app`. Se o painel for publicado em outro domínio, adicione-o à variável `CORS_ALLOWED_ORIGINS` do serviço da API no Render.
 
 ## Links
 
-- Painel publicado: _link a ser adicionado após o deploy._
+- Painel publicado: https://productmoduleinterface.vercel.app
 - API: https://product-module-api.onrender.com/swagger-ui.html
 - Repositório da API: https://github.com/Chat809/product_module_api
