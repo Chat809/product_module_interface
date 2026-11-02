@@ -1,0 +1,88 @@
+<header class="cabecalho">
+  <div>
+    <h1>Produtos</h1>
+    <p class="subtitulo">Cadastre, edite e exclua os produtos do catálogo.</p>
+  </div>
+  <a mat-flat-button routerLink="/produtos/novo">
+    <mat-icon>add</mat-icon>
+    Novo produto
+  </a>
+</header>
+
+@if (carregando()) {
+  <app-loading />
+} @else if (erroAoCarregar()) {
+  <div class="estado">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Não foi possível carregar os produtos.</p>
+    <button mat-stroked-button (click)="carregar()">Tentar novamente</button>
+  </div>
+} @else if (produtos().length === 0) {
+  <div class="estado">
+    <mat-icon>inventory_2</mat-icon>
+    <p>Nenhum produto cadastrado ainda.</p>
+    <a mat-flat-button routerLink="/produtos/novo">Cadastrar o primeiro produto</a>
+  </div>
+} @else {
+  <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
+    <mat-label>Buscar por nome ou descrição</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [value]="filtro()" (input)="filtrar($event)" />
+  </mat-form-field>
+
+  <div class="tabela">
+    <table mat-table [dataSource]="produtosVisiveis()" matSort (matSortChange)="ordenar($event)">
+      <ng-container matColumnDef="nome">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
+        <td mat-cell *matCellDef="let produto">{{ produto.nome }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="descricao">
+        <th mat-header-cell *matHeaderCellDef>Descrição</th>
+        <td mat-cell *matCellDef="let produto" class="descricao">{{ produto.descricao || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="preco">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Preço</th>
+        <td mat-cell *matCellDef="let produto">{{ produto.preco | currency }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="quantidadeEmEstoque">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Estoque</th>
+        <td mat-cell *matCellDef="let produto">{{ produto.quantidadeEmEstoque }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acoes">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let produto" class="acoes">
+          <a
+            mat-icon-button
+            [routerLink]="['/produtos', produto.id, 'editar']"
+            matTooltip="Editar"
+            [attr.aria-label]="'Editar ' + produto.nome"
+          >
+            <mat-icon>edit</mat-icon>
+          </a>
+          <button
+            mat-icon-button
+            (click)="confirmarExclusao(produto)"
+            matTooltip="Excluir"
+            [attr.aria-label]="'Excluir ' + produto.nome"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+      <tr mat-row *matRowDef="let row; columns: colunas"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell sem-resultado" [attr.colspan]="colunas.length">
+          Nenhum produto encontrado para "{{ filtro() }}".
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <p class="total">{{ produtosVisiveis().length }} de {{ produtos().length }} produto(s)</p>
+}
