@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
-import { adminGuard, authGuard, visitanteGuard } from './auth.guards';
+import { authGuard, moduloGuard, visitanteGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 
 describe('guards de autenticação', () => {
-  const auth = { logado: vi.fn(), ehAdmin: vi.fn() };
+  const auth = { logado: vi.fn(), podeAcessar: vi.fn(), rotaInicial: vi.fn(() => '/dashboard') };
   const rota = {} as ActivatedRouteSnapshot;
 
   function executar(guard: typeof authGuard, url = '/produtos'): boolean | UrlTree {
@@ -31,12 +31,19 @@ describe('guards de autenticação', () => {
     expect(destino(executar(authGuard, '/produtos'))).toBe('/login?voltar=%2Fprodutos');
   });
 
-  it('adminGuard deve liberar admin e mandar os demais ao dashboard', () => {
-    auth.ehAdmin.mockReturnValue(true);
-    expect(executar(adminGuard)).toBe(true);
+  it('moduloGuard deve liberar quem tem o módulo', () => {
+    auth.podeAcessar.mockReturnValue(true);
+    expect(executar(moduloGuard('produtos'))).toBe(true);
+    expect(auth.podeAcessar).toHaveBeenCalledWith('produtos');
+  });
 
-    auth.ehAdmin.mockReturnValue(false);
-    expect(destino(executar(adminGuard))).toBe('/dashboard');
+  it('moduloGuard deve mandar os demais para o primeiro módulo liberado', () => {
+    auth.podeAcessar.mockReturnValue(false);
+    auth.rotaInicial.mockReturnValue('/produtos');
+    expect(destino(executar(moduloGuard('usuarios')))).toBe('/produtos');
+
+    auth.rotaInicial.mockReturnValue('/sem-acesso');
+    expect(destino(executar(moduloGuard('dashboard')))).toBe('/sem-acesso');
   });
 
   it('visitanteGuard deve tirar do login quem já entrou', () => {
@@ -44,6 +51,7 @@ describe('guards de autenticação', () => {
     expect(executar(visitanteGuard)).toBe(true);
 
     auth.logado.mockReturnValue(true);
+    auth.rotaInicial.mockReturnValue('/dashboard');
     expect(destino(executar(visitanteGuard))).toBe('/dashboard');
   });
 });

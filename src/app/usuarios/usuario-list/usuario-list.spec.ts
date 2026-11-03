@@ -5,39 +5,47 @@ import { of, throwError } from 'rxjs';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
+import { SenhaDialog } from '../senha-dialog/senha-dialog';
+import { UsuarioFormDialog } from '../usuario-form/usuario-form';
 import { UsuarioService } from '../usuario.service';
 import { UsuarioList } from './usuario-list';
 
-function usuario(id: string, nome: string, papel: Usuario['papel']): Usuario {
-  return { id, nome, email: `${id}@exemplo.com`, papel, criadoEm: '2026-11-03T08:00:00Z' };
+function usuario(id: string, nome: string, papel: Usuario['papel'], acessos: string[]): Usuario {
+  return { id, nome, email: `${id}@exemplo.com`, papel, acessos, criadoEm: '2026-11-03T08:00:00Z' };
 }
 
 describe('UsuarioList', () => {
-  const eu = usuario('admin', 'Khalil', 'ADMIN');
-  const maria = usuario('maria', 'Maria', 'USUARIO');
+  const eu = usuario('admin', 'Khalil', 'ADMIN', ['*']);
+  const maria = usuario('maria', 'Maria', 'USUARIO', ['dashboard']);
+  const joao = usuario('joao', 'João', 'USUARIO', []);
 
   let fixture: ComponentFixture<UsuarioList>;
   let component: UsuarioList;
   let elemento: HTMLElement;
-  let service: { listar: ReturnType<typeof vi.fn>; alterarPapel: ReturnType<typeof vi.fn> };
+  let service: { listar: ReturnType<typeof vi.fn> };
+  let auth: { usuario: ReturnType<typeof signal<Usuario>>; atualizarUsuario: ReturnType<typeof vi.fn> };
   let notificacao: { sucesso: ReturnType<typeof vi.fn> };
-  let confirmacao: boolean;
+  let abrir: ReturnType<typeof vi.fn>;
+  let resultadoDoDialogo: unknown;
 
   beforeEach(async () => {
     service = {
-      listar: vi.fn(() => of({ conteudo: [eu, maria], pagina: 0, tamanho: 10, totalElementos: 2, totalPaginas: 1 })),
-      alterarPapel: vi.fn(() => of({ ...maria, papel: 'ADMIN' })),
+      listar: vi.fn(() =>
+        of({ conteudo: [eu, maria, joao], pagina: 0, tamanho: 10, totalElementos: 3, totalPaginas: 1 }),
+      ),
     };
+    auth = { usuario: signal(eu), atualizarUsuario: vi.fn() };
     notificacao = { sucesso: vi.fn() };
-    confirmacao = true;
+    resultadoDoDialogo = undefined;
+    abrir = vi.fn(() => ({ afterClosed: () => of(resultadoDoDialogo) }));
 
     TestBed.configureTestingModule({
       imports: [UsuarioList],
       providers: [
         { provide: UsuarioService, useValue: service },
-        { provide: AuthService, useValue: { usuario: signal(eu) } },
+        { provide: AuthService, useValue: auth },
         { provide: Notificacao, useValue: notificacao },
-        { provide: MatDialog, useValue: { open: () => ({ afterClosed: () => of(confirmacao) }) } },
+        { provide: MatDialog, useValue: { open: abrir } },
       ],
     });
     fixture = TestBed.createComponent(UsuarioList);
@@ -46,13 +54,24 @@ describe('UsuarioList', () => {
     await fixture.whenStable();
   });
 
-  it('deve listar os usuários e marcar a própria conta', () => {
+  it('deve listar os usuários com cargo e acessos, marcando a própria conta', () => {
     expect(service.listar).toHaveBeenCalledWith(0, 10);
-    const nomes = Array.from(elemento.querySelectorAll('td .nome')).map((td) => td.textContent!.trim());
-    expect(nomes).toEqual(['Khalil', 'Maria']);
-    expect(elemento.querySelector('.voce')?.textContent).toBe('você');
-    expect(component['ehVoce'](eu)).toBe(true);
-    expect(component['ehVoce'](maria)).toBe(false);
+    const linhas = Array.from(elemento.querySelectorAll('tr.mat-mdc-row')).map((tr) =>
+      tr.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(linhas[0]).toContain('Khalil');
+    expect(elemento.querySelectorAll('tr.mat-mdc-row')[0].querySelector('.voce')?.textContent).toBe('você');
+    expect(linhas[0]).toContain('Administrador');
+    expect(linhas[0]).toContain('Acesso total');
+    expect(linhas[1]).toContain('Usuário');
+    expect(linhas[1]).toContain('Dashboard');
+    expect(linhas[2]).toContain('Nenhum módulo');
+  });
+
+  it('deve traduzir os acessos para os rótulos dos módulos', () => {
+    expect(component['acessos'](eu)).toEqual(['Acesso total']);
+    expect(component['acessos']({ ...maria, acessos: ['produtos', 'dashboard'] })).toEqual(['Dashboard', 'Produtos']);
+    expect(component['acessos']({ ...maria, acessos: ['*'] })).toEqual(['Acesso total']);
   });
 
   it('deve paginar pela API', () => {
@@ -60,26 +79,38 @@ describe('UsuarioList', () => {
     expect(service.listar).toHaveBeenLastCalledWith(1, 25);
   });
 
-  it('deve promover após a confirmação e atualizar a linha', () => {
-    component['alterarPapel'](maria, 'ADMIN');
+  it('deve abrir a edição e aplicar o resultado salvo na linha e na sessão', () => {
+    const salvo = { ...maria, acessos: ['dashboard', 'produtos'] };
+    resultadoDoDialogo = salvo;
 
-    expect(service.alterarPapel).toHaveBeenCalledWith('maria', 'ADMIN');
-    expect(component['usuarios']().find((u) => u.id === 'maria')?.papel).toBe('ADMIN');
-    expect(notificacao.sucesso).toHaveBeenCalledWith('Maria agora é administrador.');
+    component['editar'](maria);
+
+    expect(abrir).toHaveBeenCalledWith(
+      UsuarioFormDialog,
+      expect.objectContaining({ data: { usuario: maria, ehVoce: false } }),
+    );
+    expect(component['usuarios']().find((u) => u.id === 'maria')?.acessos).toEqual(['dashboard', 'produtos']);
+    expect(auth.atualizarUsuario).toHaveBeenCalledWith(salvo);
+    expect(notificacao.sucesso).toHaveBeenCalledWith('Dados de Maria atualizados.');
   });
 
-  it('não deve alterar quando a confirmação for cancelada', () => {
-    confirmacao = false;
-    component['alterarPapel'](maria, 'ADMIN');
-
-    expect(service.alterarPapel).not.toHaveBeenCalled();
-    expect(component['usuarios']().find((u) => u.id === 'maria')?.papel).toBe('USUARIO');
+  it('deve indicar ao diálogo quando o admin edita a própria conta', () => {
+    component['editar'](eu);
+    expect(abrir).toHaveBeenCalledWith(UsuarioFormDialog, expect.objectContaining({ data: { usuario: eu, ehVoce: true } }));
   });
 
-  it('deve recarregar a lista se a API recusar a alteração', () => {
-    service.alterarPapel.mockReturnValue(throwError(() => new Error('422')));
-    component['alterarPapel'](maria, 'ADMIN');
-    expect(service.listar).toHaveBeenCalledTimes(2);
+  it('não deve mudar nada quando a edição for cancelada', () => {
+    component['editar'](maria);
+    expect(auth.atualizarUsuario).not.toHaveBeenCalled();
+    expect(notificacao.sucesso).not.toHaveBeenCalled();
+  });
+
+  it('deve abrir o diálogo de senha e confirmar quando definida', () => {
+    resultadoDoDialogo = true;
+    component['redefinirSenha'](maria);
+
+    expect(abrir).toHaveBeenCalledWith(SenhaDialog, expect.objectContaining({ data: maria }));
+    expect(notificacao.sucesso).toHaveBeenCalledWith('Nova senha de Maria definida.');
   });
 
   it('deve exibir o estado de erro quando não conseguir carregar', async () => {

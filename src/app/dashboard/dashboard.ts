@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
+import { AuthService } from '../core/auth/auth.service';
 import { Skeleton } from '../shared/skeleton/skeleton';
 import { ProdutoDialogs } from '../produtos/produto-dialogs.service';
 import { Produto, ResumoEstoque } from '../produtos/produto.model';
@@ -22,6 +23,8 @@ export class Dashboard implements OnInit {
   private readonly produtoService = inject(ProdutoService);
   private readonly dialogs = inject(ProdutoDialogs);
   protected readonly store = inject(ProdutoStore);
+  /** Quem só tem o dashboard vê os números, mas não registra entradas nem abre o catálogo. */
+  protected readonly gerenciaProdutos = inject(AuthService).podeAcessar('produtos');
 
   protected readonly resumo = signal<ResumoEstoque | null>(null);
   protected readonly erroNoResumo = signal(false);

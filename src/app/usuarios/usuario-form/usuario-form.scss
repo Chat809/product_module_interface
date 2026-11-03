@@ -1,0 +1,56 @@
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 12px;
+
+  h2 {
+    flex: 1;
+  }
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px !important;
+}
+
+.acessos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 16px 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-raio);
+
+  legend {
+    padding: 0 4px;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+  }
+}
+
+.modulos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  padding-left: 24px;
+}
+
+.dica {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+
+  mat-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+}

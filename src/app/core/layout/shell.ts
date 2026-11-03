@@ -10,6 +10,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
+import { descreverAcessos } from '../auth/acessos';
 import { AuthService } from '../auth/auth.service';
 import { Tema } from '../tema/tema.service';
 
@@ -40,7 +41,7 @@ interface ItemDeMenu {
           <mat-icon>menu</mat-icon>
         </button>
       }
-      <a routerLink="/dashboard" class="marca">
+      <a [routerLink]="auth.rotaInicial()" class="marca">
         <mat-icon>inventory_2</mat-icon>
         <span>Painel de Produtos</span>
       </a>
@@ -72,6 +73,7 @@ interface ItemDeMenu {
             <span class="papel" [class.admin]="usuario.papel === 'ADMIN'">
               {{ usuario.papel === 'ADMIN' ? 'Administrador' : 'Usuário' }}
             </span>
+            <span class="acessos">Acessos: {{ descreverAcessos(usuario) }}</span>
           </div>
           <button mat-menu-item (click)="auth.sair()">
             <mat-icon>logout</mat-icon>
@@ -185,6 +187,10 @@ interface ItemDeMenu {
       }
     }
 
+    .acessos {
+      margin-top: 4px;
+    }
+
     .container {
       flex: 1;
     }
@@ -219,12 +225,11 @@ interface ItemDeMenu {
 export class Shell {
   protected readonly tema = inject(Tema);
   protected readonly auth = inject(AuthService);
+  protected readonly descreverAcessos = descreverAcessos;
 
-  protected readonly itens = computed<ItemDeMenu[]>(() => [
-    { rota: '/dashboard', rotulo: 'Dashboard', icone: 'dashboard' },
-    { rota: '/produtos', rotulo: 'Produtos', icone: 'inventory_2' },
-    ...(this.auth.ehAdmin() ? [{ rota: '/usuarios', rotulo: 'Usuários', icone: 'group' }] : []),
-  ]);
+  protected readonly itens = computed<ItemDeMenu[]>(() =>
+    this.auth.modulosLiberados().map(({ rota, rotulo, icone }) => ({ rota, rotulo, icone })),
+  );
 
   protected readonly celular = toSignal(
     inject(BreakpointObserver)

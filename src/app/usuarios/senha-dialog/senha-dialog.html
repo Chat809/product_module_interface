@@ -1,0 +1,58 @@
+<header class="cabecalho">
+  <h2 mat-dialog-title>Definir nova senha</h2>
+  <button mat-icon-button type="button" aria-label="Fechar" mat-dialog-close>
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
+  <mat-dialog-content class="formulario">
+    <p class="dica">
+      <mat-icon>info</mat-icon>
+      Por segurança, a senha atual de {{ usuario.nome }} não pode ser consultada, nem por administradores. Defina
+      uma nova e repasse a ela por um canal seguro.
+    </p>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nova senha</mat-label>
+      <input
+        matInput
+        [type]="senhaVisivel() ? 'text' : 'password'"
+        formControlName="senha"
+        autocomplete="new-password"
+        cdkFocusInitial
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="senhaVisivel.set(!senhaVisivel())"
+        [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+      >
+        <mat-icon>{{ senhaVisivel() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-hint>Mínimo de 6 caracteres</mat-hint>
+      <mat-error>{{ mensagemDaSenha() }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Confirmar nova senha</mat-label>
+      <input
+        matInput
+        [type]="senhaVisivel() ? 'text' : 'password'"
+        formControlName="confirmacao"
+        autocomplete="new-password"
+      />
+      <mat-error>
+        {{ form.controls.confirmacao.hasError('diferente') ? 'As senhas não conferem' : 'Confirme a senha' }}
+      </mat-error>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando...' : 'Definir senha' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -1,0 +1,73 @@
+<header class="cabecalho">
+  <h2 mat-dialog-title>Editar usuário</h2>
+  <button mat-icon-button type="button" aria-label="Fechar" mat-dialog-close>
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
+  <mat-dialog-content class="formulario">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nome</mat-label>
+      <input matInput formControlName="nome" maxlength="100" cdkFocusInitial />
+      <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>E-mail</mat-label>
+      <input matInput type="email" formControlName="email" />
+      <mat-hint>É com este e-mail que a pessoa entra no painel.</mat-hint>
+      <mat-error>{{ mensagemDeErro('email') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Cargo</mat-label>
+      <mat-select formControlName="papel">
+        @for (papel of papeis; track papel) {
+          <mat-option [value]="papel">{{ rotulos[papel] }}</mat-option>
+        }
+      </mat-select>
+      @if (ehVoce) {
+        <mat-hint>Você não pode remover o seu próprio acesso de administrador.</mat-hint>
+      }
+    </mat-form-field>
+
+    <fieldset class="acessos">
+      <legend>Acessos</legend>
+      @if (papel() === 'ADMIN') {
+        <p class="dica">
+          <mat-icon>verified_user</mat-icon>
+          Administradores têm acesso total (<code>*</code>) a todos os módulos, inclusive Usuários.
+        </p>
+      } @else {
+        <mat-checkbox formControlName="total">Acesso total (<code>*</code>)</mat-checkbox>
+        <div class="modulos" formGroupName="modulos">
+          @for (modulo of modulos; track modulo.chave) {
+            @if (total()) {
+              <mat-checkbox [checked]="true" disabled>{{ modulo.rotulo }}</mat-checkbox>
+            } @else {
+              <mat-checkbox [formControlName]="modulo.chave">{{ modulo.rotulo }}</mat-checkbox>
+            }
+          }
+        </div>
+        <p class="dica">
+          <mat-icon>info</mat-icon>
+          O módulo Usuários é exclusivo de administradores. Sem nenhum módulo marcado, a pessoa entra mas não vê
+          nenhuma área do painel.
+        </p>
+      }
+    </fieldset>
+
+    <p class="dica">
+      <mat-icon>schedule</mat-icon>
+      Cargo e acessos novos valem a partir do próximo login (ou da renovação automática da sessão, em até 1 hora).
+    </p>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando...' : 'Salvar alterações' }}
+    </button>
+  </mat-dialog-actions>
+</form>

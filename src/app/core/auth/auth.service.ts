@@ -3,7 +3,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, finalize, map, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Sessao, Usuario } from './auth.model';
+import { MODULOS, podeAcessar } from './acessos';
+import { Modulo, Sessao, Usuario } from './auth.model';
 
 const CHAVE_SESSAO = 'painel.sessao';
 
@@ -30,6 +31,24 @@ export class AuthService {
   readonly usuario = computed(() => this.sessao()?.usuario ?? null);
   readonly logado = computed(() => this.sessao() !== null);
   readonly ehAdmin = computed(() => this.usuario()?.papel === 'ADMIN');
+  readonly modulosLiberados = computed(() => MODULOS.filter((m) => podeAcessar(this.usuario(), m.chave)));
+
+  podeAcessar(modulo: Modulo): boolean {
+    return podeAcessar(this.usuario(), modulo);
+  }
+
+  /** Primeiro módulo liberado, para onde vão a raiz e as rotas proibidas. */
+  rotaInicial(): string {
+    return this.modulosLiberados()[0]?.rota ?? '/sem-acesso';
+  }
+
+  /** Mantém a sessão em dia quando o admin edita a própria conta na tela de usuários. */
+  atualizarUsuario(usuario: Usuario): void {
+    const atual = this.sessao();
+    if (atual && atual.usuario.id === usuario.id) {
+      this.guardar({ ...atual, usuario });
+    }
+  }
 
   /**
    * Dispara o despertar da API enquanto o usuário preenche o formulário. O modo `no-cors`

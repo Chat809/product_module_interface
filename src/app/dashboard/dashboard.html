@@ -43,10 +43,12 @@
 <section class="painel">
   <header>
     <h2>Precisa repor</h2>
-    <a mat-button routerLink="/produtos">
-      Ver todos os produtos
-      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-    </a>
+    @if (gerenciaProdutos) {
+      <a mat-button routerLink="/produtos">
+        Ver todos os produtos
+        <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+      </a>
+    }
   </header>
 
   @if (store.carregando() && store.produtos().length === 0) {
@@ -60,10 +62,12 @@
             {{ produto.quantidadeEmEstoque === 0 ? 'Esgotado' : produto.quantidadeEmEstoque + ' em estoque' }}
           </span>
         </div>
-        <button mat-stroked-button (click)="repor(produto)">
-          <mat-icon>add</mat-icon>
-          Registrar entrada
-        </button>
+        @if (gerenciaProdutos) {
+          <button mat-stroked-button (click)="repor(produto)">
+            <mat-icon>add</mat-icon>
+            Registrar entrada
+          </button>
+        }
       </div>
     } @empty {
       <p class="vazio">🎉 Nenhum produto com estoque baixo no momento.</p>

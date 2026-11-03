@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { AuthService } from '../core/auth/auth.service';
 import { ProdutoDialogs } from '../produtos/produto-dialogs.service';
 import { Produto, ResumoEstoque } from '../produtos/produto.model';
 import { ProdutoService } from '../produtos/produto.service';
@@ -35,7 +36,7 @@ describe('Dashboard', () => {
   let produtoService: { resumo: ReturnType<typeof vi.fn>; listarCatalogo: ReturnType<typeof vi.fn> };
   let dialogs: { movimentar: ReturnType<typeof vi.fn> };
 
-  beforeEach(async () => {
+  async function criar(gerenciaProdutos = true): Promise<void> {
     produtoService = { resumo: vi.fn(() => of(resumo)), listarCatalogo: vi.fn(() => of(catalogo)) };
     dialogs = { movimentar: vi.fn(() => of(true)) };
 
@@ -45,11 +46,14 @@ describe('Dashboard', () => {
         provideRouter([]),
         { provide: ProdutoService, useValue: produtoService },
         { provide: ProdutoDialogs, useValue: dialogs },
+        { provide: AuthService, useValue: { podeAcessar: () => gerenciaProdutos } },
       ],
     });
     fixture = TestBed.createComponent(Dashboard);
     await fixture.whenStable();
-  });
+  }
+
+  beforeEach(() => criar());
 
   function texto(): string {
     return (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
@@ -77,5 +81,15 @@ describe('Dashboard', () => {
 
     expect(dialogs.movimentar).toHaveBeenCalledWith(catalogo[2], 'ENTRADA');
     expect(produtoService.resumo).toHaveBeenCalledTimes(2);
+  });
+
+  it('sem o módulo de produtos deve mostrar os números, mas esconder entrada e catálogo', async () => {
+    TestBed.resetTestingModule();
+    await criar(false);
+    const elemento = fixture.nativeElement as HTMLElement;
+
+    expect(elemento.querySelectorAll('.item .nome')).toHaveLength(3);
+    expect(elemento.querySelector('.item button')).toBeNull();
+    expect(elemento.querySelector('a[href="/produtos"]')).toBeNull();
   });
 });

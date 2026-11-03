@@ -90,6 +90,34 @@ describe('AuthService', () => {
     expect(auth.token()).toBe('novo');
   });
 
+  it('deve liberar módulos e a rota inicial conforme os acessos da sessão', () => {
+    localStorage.setItem('painel.sessao', JSON.stringify(sessaoDeTeste('USUARIO', 'acesso', ['produtos'])));
+    const auth = criar();
+
+    expect(auth.podeAcessar('produtos')).toBe(true);
+    expect(auth.podeAcessar('dashboard')).toBe(false);
+    expect(auth.modulosLiberados().map((m) => m.chave)).toEqual(['produtos']);
+    expect(auth.rotaInicial()).toBe('/produtos');
+  });
+
+  it('sem nenhum módulo, a rota inicial deve ser a tela de sem acesso', () => {
+    localStorage.setItem('painel.sessao', JSON.stringify(sessaoDeTeste('USUARIO', 'acesso', [])));
+    expect(criar().rotaInicial()).toBe('/sem-acesso');
+  });
+
+  it('deve atualizar a sessão só quando o usuário editado for o próprio logado', () => {
+    localStorage.setItem('painel.sessao', JSON.stringify(sessaoDeTeste('ADMIN')));
+    const auth = criar();
+    const eu = auth.usuario()!;
+
+    auth.atualizarUsuario({ ...eu, id: 'outro', nome: 'Outra Pessoa' });
+    expect(auth.usuario()?.nome).toBe('Maria Souza');
+
+    auth.atualizarUsuario({ ...eu, nome: 'Maria S.' });
+    expect(auth.usuario()?.nome).toBe('Maria S.');
+    expect(JSON.parse(localStorage.getItem('painel.sessao')!).usuario.nome).toBe('Maria S.');
+  });
+
   it('deve acordar a API uma única vez, sem passar pelos interceptors', () => {
     const fetch = vi.fn(() => Promise.resolve(new Response()));
     vi.stubGlobal('fetch', fetch);
