@@ -1,18 +1,30 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { App } from './app';
+import { Router, provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { routes } from './app.routes';
 
-describe('App', () => {
-  it('deve exibir o layout com o título do painel', async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-      providers: [provideRouter([])],
-    }).compileComponents();
+describe('App (rotas)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+    });
+  });
 
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
+  it('sem sessão deve abrir o login, guardando a rota pedida', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/produtos');
 
-    const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('mat-toolbar')?.textContent).toContain('Painel de Produtos');
+    expect(TestBed.inject(Router).url).toBe('/login?voltar=%2Fprodutos');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Entrar');
+  });
+
+  it('deve permitir abrir a tela de registro sem sessão', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/registro');
+
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Criar conta');
   });
 });

@@ -24,10 +24,10 @@ describe('errorInterceptor', () => {
 
   afterEach(() => controle.verify());
 
-  function falhar(status: number, corpo: object | null = null): unknown {
+  function falhar(status: number, corpo: object | null = null, url = '/api'): unknown {
     let erroRecebido: unknown;
-    http.get('/api').subscribe({ error: (e) => (erroRecebido = e) });
-    const req = controle.expectOne('/api');
+    http.get(url).subscribe({ error: (e) => (erroRecebido = e) });
+    const req = controle.expectOne(url);
     if (status === 0) {
       req.error(new ProgressEvent('error'), { status: 0 });
     } else {
@@ -51,9 +51,27 @@ describe('errorInterceptor', () => {
     expect(notificacao.erro).toHaveBeenCalledWith("O parâmetro 'size' deve estar entre 1 e 500");
   });
 
-  it('deve avisar sobre edição concorrente em 409', () => {
-    falhar(409);
+  it('deve avisar sobre edição concorrente em 409 nas rotas de produtos', () => {
+    falhar(409, null, '/api/produtos/1');
     expect(notificacao.aviso).toHaveBeenCalledWith(expect.stringContaining('alterado por outra pessoa'));
+  });
+
+  it('deve exibir o detalhe da API em 409 fora dos produtos', () => {
+    falhar(409, { detail: 'Já existe uma conta com o e-mail maria@exemplo.com' }, '/api/auth/registro');
+    expect(notificacao.erro).toHaveBeenCalledWith('Já existe uma conta com o e-mail maria@exemplo.com');
+  });
+
+  it('deve exibir o motivo do 401 no login e avisar sobre sessão expirada nas demais rotas', () => {
+    falhar(401, { detail: 'E-mail ou senha inválidos' }, '/api/auth/login');
+    expect(notificacao.erro).toHaveBeenCalledWith('E-mail ou senha inválidos');
+
+    falhar(401, null, '/api/produtos');
+    expect(notificacao.aviso).toHaveBeenCalledWith('Sua sessão expirou. Entre novamente.');
+  });
+
+  it('deve avisar sobre falta de permissão em 403', () => {
+    falhar(403);
+    expect(notificacao.aviso).toHaveBeenCalledWith('Você não tem permissão para esta ação.');
   });
 
   it('deve exibir o detalhe da regra de negócio em 422', () => {
