@@ -1,0 +1,79 @@
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 24px 16px;
+  background:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--mat-sys-primary) 14%, transparent), transparent 45%),
+    radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--mat-sys-tertiary) 12%, transparent), transparent 45%),
+    var(--mat-sys-surface);
+}
+
+.cartao {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px clamp(20px, 5vw, 36px);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: calc(var(--app-raio) * 2);
+  background: var(--mat-sys-surface-container-lowest);
+  box-shadow: var(--mat-sys-level2);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-title-medium);
+}
+
+h1 {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+}
+
+.subtitulo {
+  margin: 4px 0 24px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.enviar {
+  height: 48px;
+  margin-top: 8px;
+}
+
+.alternar {
+  margin: 24px 0 0;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  a {
+    color: var(--mat-sys-primary);
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.tema {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+}

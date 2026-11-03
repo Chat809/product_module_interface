@@ -1,0 +1,77 @@
+<button
+  mat-icon-button
+  class="tema"
+  (click)="tema.alternar()"
+  [matTooltip]="tema.escuro() ? 'Usar tema claro' : 'Usar tema escuro'"
+  [attr.aria-label]="tema.escuro() ? 'Usar tema claro' : 'Usar tema escuro'"
+>
+  <mat-icon>{{ tema.escuro() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+</button>
+
+<section class="cartao">
+  <div class="marca">
+    <mat-icon>inventory_2</mat-icon>
+    <span>Painel de Produtos</span>
+  </div>
+
+  <h1>Criar conta</h1>
+  <p class="subtitulo">Preencha seus dados para começar a usar o painel.</p>
+
+  <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nome</mat-label>
+      <mat-icon matPrefix>person</mat-icon>
+      <input matInput formControlName="nome" autocomplete="name" maxlength="100" cdkFocusInitial />
+      <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>E-mail</mat-label>
+      <mat-icon matPrefix>mail</mat-icon>
+      <input matInput type="email" formControlName="email" autocomplete="email" />
+      <mat-error>{{ mensagemDeErro('email') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Senha</mat-label>
+      <mat-icon matPrefix>lock</mat-icon>
+      <input
+        matInput
+        [type]="senhaVisivel() ? 'text' : 'password'"
+        formControlName="senha"
+        autocomplete="new-password"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="senhaVisivel.set(!senhaVisivel())"
+        [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+      >
+        <mat-icon>{{ senhaVisivel() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-hint>Mínimo de 6 caracteres</mat-hint>
+      <mat-error>{{ mensagemDeErro('senha') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Confirmar senha</mat-label>
+      <mat-icon matPrefix>lock_reset</mat-icon>
+      <input
+        matInput
+        [type]="senhaVisivel() ? 'text' : 'password'"
+        formControlName="confirmacao"
+        autocomplete="new-password"
+      />
+      <mat-error>{{ mensagemDeErro('confirmacao') }}</mat-error>
+    </mat-form-field>
+
+    <button mat-flat-button class="enviar" type="submit" [disabled]="enviando()">
+      {{ enviando() ? 'Criando conta...' : 'Criar conta' }}
+    </button>
+  </form>
+
+  <p class="alternar">
+    Já tem conta? <a routerLink="/login">Entrar</a>
+  </p>
+</section>

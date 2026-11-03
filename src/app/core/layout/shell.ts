@@ -1,14 +1,16 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
 import { Tema } from '../tema/tema.service';
 
 interface ItemDeMenu {
@@ -23,6 +25,7 @@ interface ItemDeMenu {
     MatButtonModule,
     MatIconModule,
     MatListModule,
+    MatMenuModule,
     MatSidenavModule,
     MatToolbarModule,
     MatTooltipModule,
@@ -50,6 +53,32 @@ interface ItemDeMenu {
       >
         <mat-icon>{{ tema.escuro() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
+      @if (auth.usuario(); as usuario) {
+        <button
+          mat-button
+          class="usuario"
+          [matMenuTriggerFor]="menuUsuario"
+          [attr.aria-label]="'Conta de ' + usuario.nome"
+        >
+          <mat-icon>account_circle</mat-icon>
+          @if (!celular()) {
+            <span class="nome-usuario">{{ usuario.nome }}</span>
+          }
+        </button>
+        <mat-menu #menuUsuario="matMenu" xPosition="before">
+          <div class="conta" (click)="$event.stopPropagation()">
+            <strong>{{ usuario.nome }}</strong>
+            <span>{{ usuario.email }}</span>
+            <span class="papel" [class.admin]="usuario.papel === 'ADMIN'">
+              {{ usuario.papel === 'ADMIN' ? 'Administrador' : 'Usuário' }}
+            </span>
+          </div>
+          <button mat-menu-item (click)="auth.sair()">
+            <mat-icon>logout</mat-icon>
+            <span>Sair</span>
+          </button>
+        </mat-menu>
+      }
     </mat-toolbar>
 
     <mat-sidenav-container class="container">
@@ -62,7 +91,7 @@ interface ItemDeMenu {
         fixedTopGap="64"
       >
         <mat-nav-list>
-          @for (item of itens; track item.rota) {
+          @for (item of itens(); track item.rota) {
             <a
               mat-list-item
               [routerLink]="item.rota"
@@ -115,6 +144,47 @@ interface ItemDeMenu {
       flex: 1;
     }
 
+    .toolbar .usuario {
+      color: inherit;
+      margin-left: 4px;
+    }
+
+    .nome-usuario {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .conta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+
+      strong {
+        font: var(--mat-sys-title-small);
+        color: var(--mat-sys-on-surface);
+      }
+    }
+
+    .papel {
+      align-self: flex-start;
+      margin-top: 6px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: var(--mat-sys-surface-container-highest);
+      font: var(--mat-sys-label-small);
+
+      &.admin {
+        background: var(--mat-sys-primary-container);
+        color: var(--mat-sys-on-primary-container);
+      }
+    }
+
     .container {
       flex: 1;
     }
@@ -148,11 +218,13 @@ interface ItemDeMenu {
 })
 export class Shell {
   protected readonly tema = inject(Tema);
+  protected readonly auth = inject(AuthService);
 
-  protected readonly itens: ItemDeMenu[] = [
+  protected readonly itens = computed<ItemDeMenu[]>(() => [
     { rota: '/dashboard', rotulo: 'Dashboard', icone: 'dashboard' },
     { rota: '/produtos', rotulo: 'Produtos', icone: 'inventory_2' },
-  ];
+    ...(this.auth.ehAdmin() ? [{ rota: '/usuarios', rotulo: 'Usuários', icone: 'group' }] : []),
+  ]);
 
   protected readonly celular = toSignal(
     inject(BreakpointObserver)

@@ -21,10 +21,25 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         case 0:
           notificacao.erro('Não foi possível conectar à API. Verifique sua conexão e tente novamente.');
           break;
+        case 401:
+          // Fora das rotas de login, o 401 chega aqui só depois de a renovação da sessão falhar.
+          if (req.url.includes('/auth/')) {
+            notificacao.erro(problem?.detail ?? 'E-mail ou senha inválidos.');
+          } else {
+            notificacao.aviso('Sua sessão expirou. Entre novamente.');
+          }
+          break;
+        case 403:
+          notificacao.aviso('Você não tem permissão para esta ação.');
+          break;
         case 409:
-          notificacao.aviso(
-            'Este produto foi alterado por outra pessoa. Os dados foram atualizados; revise e tente de novo.',
-          );
+          if (req.url.includes('/produtos')) {
+            notificacao.aviso(
+              'Este produto foi alterado por outra pessoa. Os dados foram atualizados; revise e tente de novo.',
+            );
+          } else {
+            notificacao.erro(problem?.detail ?? 'A operação conflita com dados existentes.');
+          }
           break;
         case 422:
           notificacao.aviso(problem?.detail ?? 'A operação não pôde ser concluída.');

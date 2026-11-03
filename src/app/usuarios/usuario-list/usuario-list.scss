@@ -1,0 +1,77 @@
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font: var(--mat-sys-headline-medium);
+  }
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tabela {
+  overflow-x: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-raio);
+  background: var(--mat-sys-surface);
+
+  table {
+    width: 100%;
+    background: transparent;
+  }
+}
+
+.mat-mdc-row {
+  transition: background-color var(--app-transicao);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-low);
+  }
+}
+
+.nome {
+  font: var(--mat-sys-title-small);
+}
+
+.voce {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+}
+
+.email,
+.data {
+  white-space: nowrap;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.papel {
+  width: 150px;
+}
+
+.estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+  }
+}
