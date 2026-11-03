@@ -1,0 +1,72 @@
+<header class="cabecalho">
+  <h1>Dashboard</h1>
+  <p class="subtitulo">Visão geral do catálogo e do estoque.</p>
+</header>
+
+@if (resumo(); as r) {
+  <section class="indicadores">
+    <article class="indicador">
+      <mat-icon>inventory_2</mat-icon>
+      <span class="valor">{{ r.totalProdutos | number }}</span>
+      <span class="rotulo">Produtos cadastrados</span>
+    </article>
+    <article class="indicador">
+      <mat-icon>stacks</mat-icon>
+      <span class="valor">{{ r.totalItens | number }}</span>
+      <span class="rotulo">Itens em estoque</span>
+    </article>
+    <article class="indicador">
+      <mat-icon>payments</mat-icon>
+      <span class="valor">{{ r.valorTotal | currency }}</span>
+      <span class="rotulo">Valor em estoque</span>
+    </article>
+    <article class="indicador alerta" [class.ativo]="r.esgotados + r.estoqueBaixo > 0">
+      <mat-icon>production_quantity_limits</mat-icon>
+      <span class="valor">{{ r.esgotados }} <small>/ {{ r.estoqueBaixo }}</small></span>
+      <span class="rotulo">Esgotados / estoque baixo (até {{ r.limiteEstoqueBaixo }})</span>
+    </article>
+  </section>
+} @else if (erroNoResumo()) {
+  <div class="estado">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Não foi possível carregar os indicadores.</p>
+    <button mat-stroked-button (click)="carregarResumo()">Tentar novamente</button>
+  </div>
+} @else {
+  <section class="indicadores">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="indicador"><div class="skeleton bloco"></div></div>
+    }
+  </section>
+}
+
+<section class="painel">
+  <header>
+    <h2>Precisa repor</h2>
+    <a mat-button routerLink="/produtos">
+      Ver todos os produtos
+      <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+    </a>
+  </header>
+
+  @if (store.carregando() && store.produtos().length === 0) {
+    <app-skeleton [linhas]="3" />
+  } @else {
+    @for (produto of paraRepor(); track produto.id) {
+      <div class="item">
+        <div class="info">
+          <span class="nome">{{ produto.nome }}</span>
+          <span class="selo-estoque" [class]="produto.quantidadeEmEstoque === 0 ? 'esgotado' : 'baixo'">
+            {{ produto.quantidadeEmEstoque === 0 ? 'Esgotado' : produto.quantidadeEmEstoque + ' em estoque' }}
+          </span>
+        </div>
+        <button mat-stroked-button (click)="repor(produto)">
+          <mat-icon>add</mat-icon>
+          Registrar entrada
+        </button>
+      </div>
+    } @empty {
+      <p class="vazio">🎉 Nenhum produto com estoque baixo no momento.</p>
+    }
+  }
+</section>
