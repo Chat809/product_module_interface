@@ -16,16 +16,30 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      notificacao.erro(mensagemDeErro(error));
+      const problem = error.error as ProblemDetail | null;
+      switch (error.status) {
+        case 0:
+          notificacao.erro('Não foi possível conectar à API. Verifique sua conexão e tente novamente.');
+          break;
+        case 409:
+          notificacao.aviso(
+            'Este produto foi alterado por outra pessoa. Os dados foram atualizados; revise e tente de novo.',
+          );
+          break;
+        case 422:
+          notificacao.aviso(problem?.detail ?? 'A operação não pôde ser concluída.');
+          break;
+        case 400:
+          notificacao.erro(
+            problem?.erros?.length
+              ? 'Verifique os campos destacados no formulário.'
+              : (problem?.detail ?? 'Requisição inválida.'),
+          );
+          break;
+        default:
+          notificacao.erro(problem?.detail ?? 'Ocorreu um erro inesperado. Tente novamente.');
+      }
       return throwError(() => error);
     }),
   );
 };
-
-function mensagemDeErro(error: HttpErrorResponse): string {
-  if (error.status === 0) {
-    return 'Não foi possível conectar à API. Verifique sua conexão e tente novamente.';
-  }
-  const problem = error.error as ProblemDetail | null;
-  return problem?.detail ?? 'Ocorreu um erro inesperado. Tente novamente.';
-}
