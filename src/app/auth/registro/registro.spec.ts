@@ -119,4 +119,9 @@ describe('Registro', () => {
 
     expect(component['mensagemDeErro']('senha')).toBe('Senha recusada');
   });
+
+  it('deve oferecer a criação de conta com Google', () => {
+    const botao = (fixture.nativeElement as HTMLElement).querySelector('app-botao-google');
+    expect(botao?.textContent).toContain('Criar conta com Google');
+  });
 });

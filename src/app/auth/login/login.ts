@@ -14,10 +14,12 @@ import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { acompanharEspera } from '../../core/http/espera';
 import { Tema } from '../../core/tema/tema.service';
+import { BotaoGoogle } from '../botao-google/botao-google';
 
 @Component({
   selector: 'app-login',
   imports: [
+    BotaoGoogle,
     ReactiveFormsModule,
     RouterLink,
     MatButtonModule,

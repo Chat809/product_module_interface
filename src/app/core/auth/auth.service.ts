@@ -1,12 +1,20 @@
+import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, finalize, map, shareReplay, tap } from 'rxjs';
+import { Observable, finalize, map, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { MODULOS, podeAcessar } from './acessos';
 import { Modulo, Sessao, Usuario } from './auth.model';
+import { ROTA_RETORNO_GOOGLE, desafioDe, gerarVerificador, urlDoGoogle } from './google';
 
 const CHAVE_SESSAO = 'painel.sessao';
+const CHAVE_GOOGLE = 'painel.google';
+
+interface LoginGoogle {
+  verificador: string;
+  voltar?: string;
+}
 
 function lerSessaoGuardada(): Sessao | null {
   try {
@@ -17,11 +25,15 @@ function lerSessaoGuardada(): Sessao | null {
   }
 }
 
-/** Sessão do usuário. O painel só conversa com a API; quem fala com o Supabase é o backend. */
+/**
+ * Sessão do usuário. O painel só chama a API; o Supabase aparece apenas no redirecionamento do
+ * login com Google, e mesmo ali a troca do código pela sessão é feita pelo backend.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly documento = inject(DOCUMENT);
   private readonly url = `${environment.apiUrl}/auth`;
 
   private readonly sessao = signal<Sessao | null>(lerSessaoGuardada());
@@ -82,6 +94,31 @@ export class AuthService {
   }
 
   /**
+   * Leva ao Google pelo Supabase. O verificador e a rota de volta ficam no sessionStorage da aba,
+   * porque a página é recarregada no retorno.
+   */
+  async entrarComGoogle(voltar?: string): Promise<void> {
+    const verificador = gerarVerificador();
+    sessionStorage.setItem(CHAVE_GOOGLE, JSON.stringify({ verificador, voltar } satisfies LoginGoogle));
+    const retorno = `${this.documento.location.origin}${ROTA_RETORNO_GOOGLE}`;
+    this.irPara(urlDoGoogle(await desafioDe(verificador), retorno));
+  }
+
+  /** Troca o código do retorno pela sessão. O verificador é descartado mesmo se a troca falhar: o código é de uso único. */
+  concluirGoogle(codigo: string): Observable<{ usuario: Usuario; voltar?: string }> {
+    const guardado = sessionStorage.getItem(CHAVE_GOOGLE);
+    sessionStorage.removeItem(CHAVE_GOOGLE);
+    if (!guardado) {
+      return throwError(() => new Error('Login com Google não iniciado nesta aba'));
+    }
+    const { verificador, voltar } = JSON.parse(guardado) as LoginGoogle;
+    return this.http.post<Sessao>(`${this.url}/google`, { codigo, verificador }).pipe(
+      tap((sessao) => this.guardar(sessao)),
+      map((sessao) => ({ usuario: sessao.usuario, voltar })),
+    );
+  }
+
+  /**
    * O Supabase invalida o refresh token a cada uso, então requisições que expiram juntas
    * compartilham a mesma renovação em vez de disparar várias.
    */
@@ -101,6 +138,10 @@ export class AuthService {
     this.sessao.set(null);
     localStorage.removeItem(CHAVE_SESSAO);
     this.router.navigate(['/login']);
+  }
+
+  protected irPara(url: string): void {
+    this.documento.location.assign(url);
   }
 
   private guardar(sessao: Sessao): void {

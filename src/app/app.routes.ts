@@ -20,6 +20,11 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/registro/registro').then((m) => m.Registro),
   },
   {
+    path: 'auth/callback',
+    title: 'Entrando com Google',
+    loadComponent: () => import('./auth/google-callback/google-callback').then((m) => m.GoogleCallback),
+  },
+  {
     path: '',
     component: Shell,
     canActivate: [authGuard],

@@ -75,6 +75,50 @@ describe('AuthService', () => {
     expect(auth.logado()).toBe(true);
   });
 
+  describe('login com Google', () => {
+    beforeEach(() => sessionStorage.clear());
+
+    it('deve guardar o verificador e a rota de volta e ir ao Supabase só com o hash', async () => {
+      const auth = criar();
+      const irPara = vi.spyOn(auth as unknown as { irPara: (url: string) => void }, 'irPara').mockImplementation(() => {});
+
+      await auth.entrarComGoogle('/produtos');
+
+      const guardado = JSON.parse(sessionStorage.getItem('painel.google')!);
+      expect(guardado.voltar).toBe('/produtos');
+      expect(guardado.verificador).toHaveLength(43);
+      const destino = new URL(irPara.mock.calls[0][0]);
+      expect(`${destino.origin}${destino.pathname}`).toBe(`${environment.supabaseUrl}/auth/v1/authorize`);
+      expect(destino.searchParams.get('provider')).toBe('google');
+      expect(destino.searchParams.get('redirect_to')).toBe(`${location.origin}/auth/callback`);
+      expect(destino.searchParams.get('code_challenge_method')).toBe('s256');
+      expect(destino.searchParams.get('code_challenge')).not.toBe(guardado.verificador);
+    });
+
+    it('deve trocar o código pela sessão e descartar o verificador', () => {
+      sessionStorage.setItem('painel.google', JSON.stringify({ verificador: 'v'.repeat(43), voltar: '/produtos' }));
+      const auth = criar();
+      let resultado: { voltar?: string } = {};
+      auth.concluirGoogle('codigo-google').subscribe((r) => (resultado = r));
+
+      const req = controle.expectOne(`${url}/google`);
+      expect(req.request.body).toEqual({ codigo: 'codigo-google', verificador: 'v'.repeat(43) });
+      req.flush(sessaoDeTeste('ADMIN'));
+
+      expect(resultado.voltar).toBe('/produtos');
+      expect(auth.ehAdmin()).toBe(true);
+      expect(sessionStorage.getItem('painel.google')).toBeNull();
+    });
+
+    it('deve recusar o retorno sem login iniciado nesta aba, sem chamar a API', () => {
+      const auth = criar();
+      let falhou = false;
+      auth.concluirGoogle('codigo').subscribe({ error: () => (falhou = true) });
+      expect(falhou).toBe(true);
+      controle.expectNone(`${url}/google`);
+    });
+  });
+
   it('deve compartilhar uma única renovação entre chamadas simultâneas', () => {
     localStorage.setItem('painel.sessao', JSON.stringify(sessaoDeTeste()));
     const auth = criar();

@@ -20,6 +20,7 @@ import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { acompanharEspera } from '../../core/http/espera';
 import { Tema } from '../../core/tema/tema.service';
+import { BotaoGoogle } from '../botao-google/botao-google';
 
 type Campo = 'nome' | 'email' | 'senha' | 'confirmacao';
 
@@ -49,6 +50,7 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
 @Component({
   selector: 'app-registro',
   imports: [
+    BotaoGoogle,
     ReactiveFormsModule,
     RouterLink,
     MatButtonModule,

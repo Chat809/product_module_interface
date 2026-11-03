@@ -15,7 +15,7 @@
   </div>
 
   <h1>Entrar</h1>
-  <p class="subtitulo">Use seu e-mail e senha para acessar o painel.</p>
+  <p class="subtitulo">Use seu e-mail e senha ou sua conta Google para acessar o painel.</p>
 
   <form [formGroup]="form" (ngSubmit)="entrar()" novalidate>
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -64,6 +64,8 @@
       </p>
     }
   </form>
+
+  <app-botao-google [voltar]="voltar()" />
 
   <p class="alternar">
     Ainda não tem conta? <a routerLink="/registro">Criar conta</a>

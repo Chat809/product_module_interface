@@ -81,6 +81,13 @@ describe('Login', () => {
     expect(component['enviando']()).toBe(false);
   });
 
+  it('deve oferecer o login com Google levando a rota pedida', async () => {
+    fixture.componentRef.setInput('voltar', '/produtos');
+    await fixture.whenStable();
+    const botao = (fixture.nativeElement as HTMLElement).querySelector('app-botao-google');
+    expect(botao?.textContent).toContain('Entrar com Google');
+  });
+
   it('deve ter link para criar conta', () => {
     const link = (fixture.nativeElement as HTMLElement).querySelector('a[href="/registro"]');
     expect(link?.textContent).toContain('Criar conta');
