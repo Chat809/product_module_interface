@@ -1,5 +1,6 @@
 import { Injectable, Provider, inject } from '@angular/core';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatDateFormats } from '@angular/material/core';
+import { MatDatepickerIntl } from '@angular/material/datepicker';
 
 const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DIGITADA = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
@@ -160,6 +161,21 @@ export class DataIsoAdapter extends DateAdapter<string> {
   }
 }
 
+@Injectable()
+export class CalendarioIntl extends MatDatepickerIntl {
+  override calendarLabel = 'Calendário';
+  override openCalendarLabel = 'Abrir calendário';
+  override closeCalendarLabel = 'Fechar calendário';
+  override prevMonthLabel = 'Mês anterior';
+  override nextMonthLabel = 'Próximo mês';
+  override prevYearLabel = 'Ano anterior';
+  override nextYearLabel = 'Próximo ano';
+  override prevMultiYearLabel = 'Anos anteriores';
+  override nextMultiYearLabel = 'Próximos anos';
+  override switchToMonthViewLabel = 'Escolher dia';
+  override switchToMultiYearViewLabel = 'Escolher mês e ano';
+}
+
 export const FORMATOS_DE_DATA: MatDateFormats = {
   parse: { dateInput: null },
   display: {
@@ -179,4 +195,5 @@ export const PROVEDORES_DE_DATA: Provider[] = [
   { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
   { provide: DateAdapter, useClass: DataIsoAdapter },
   { provide: MAT_DATE_FORMATS, useValue: FORMATOS_DE_DATA },
+  { provide: MatDatepickerIntl, useClass: CalendarioIntl },
 ];

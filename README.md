@@ -3,7 +3,7 @@
 [![CI](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml/badge.svg)](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml)
 ![Angular](https://img.shields.io/badge/Angular-22-dd0031)
 ![Angular Material](https://img.shields.io/badge/Angular%20Material-22-3f51b5)
-![Testes](https://img.shields.io/badge/testes-211%20passando-success)
+![Testes](https://img.shields.io/badge/testes-212%20passando-success)
 
 Painel em Angular que consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot, publicada no Render). Começou como a interface do CRUD de produtos pedido no teste técnico e hoje também tem login (e-mail e senha ou Google), acessos por módulo, gestão de usuários, perfil com foto, um quadro Kanban de demandas e um módulo financeiro.
 
@@ -172,7 +172,7 @@ Build: `npm run build`, com saída em `dist/product-module-interface/browser`.
 npm test
 ```
 
-São 211 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
+São 212 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
 
 | Arquivo | O que cobre |
 |---|---|
@@ -188,7 +188,7 @@ São 211 testes com Vitest. Cada teste sobe um componente ou serviço isolado pe
 | `demanda.service.spec.ts`, `demanda-board.spec.ts`, `demanda-form.spec.ts` | Endpoints; colunas, filtros, arrastar com posição real, recarga em erro, abrir pela URL; criação com checklist, responsáveis removidos e exclusão permitida |
 | `financeiro.model.spec.ts`, `financeiro.service.spec.ts` | Cálculo de imposto igual ao do banco; tradução dos filtros em parâmetros e endpoints |
 | `conta-lista.spec.ts`, `conta-form.spec.ts`, `baixa-dialog.spec.ts` | Tabela, filtros, busca com espera e ações; prévia do líquido e regra da chave Pix; data da baixa |
-| `data-iso.adapter.spec.ts` | Datas digitadas em dd/mm/aaaa, datas impossíveis, nomes em português e contas do calendário sem erro de fuso |
+| `data-iso.adapter.spec.ts` | Datas digitadas em dd/mm/aaaa, datas impossíveis, nomes e botões em português e contas do calendário sem erro de fuso |
 | `app.spec.ts`, `tema.service.spec.ts`, `paginador-intl.spec.ts`, `toast.spec.ts` | Rotas e bloqueios (Financeiro sem módulo, Meu perfil para todos); tema; paginação em português; toasts |
 
 ### Estrutura e rotas

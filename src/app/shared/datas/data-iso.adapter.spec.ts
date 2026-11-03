@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DateAdapter } from '@angular/material/core';
+import { MatDatepickerIntl } from '@angular/material/datepicker';
 import { DataIsoAdapter, PROVEDORES_DE_DATA } from './data-iso.adapter';
 
 describe('DataIsoAdapter', () => {
@@ -35,6 +36,12 @@ describe('DataIsoAdapter', () => {
     expect(adapter.getNumDaysInMonth('2028-02-10')).toBe(29);
     expect(adapter.createDate(2026, 10, 3)).toBe('2026-11-03');
     expect(() => adapter.createDate(2026, 1, 30)).toThrow();
+  });
+
+  it('deve anunciar os botões do calendário em português', () => {
+    const intl = TestBed.inject(MatDatepickerIntl);
+    expect(intl.openCalendarLabel).toBe('Abrir calendário');
+    expect(intl.nextMonthLabel).toBe('Próximo mês');
   });
 
   it('deve tratar o valor vazio do formulário como sem data', () => {
