@@ -31,11 +31,13 @@
       <dl class="dados">
         <dt>E-mail</dt>
         <dd>{{ perfil.email }}</dd>
+        <dt>Departamento</dt>
+        <dd>{{ perfil.departamento || 'Não informado' }}</dd>
         <dt>Cargo</dt>
+        <dd>{{ perfil.funcao || 'Não informado' }}</dd>
+        <dt>Nível de acesso</dt>
         <dd>
-          <span class="papel" [class.admin]="perfil.papel === 'ADMIN'">
-            {{ perfil.papel === 'ADMIN' ? 'Administrador' : 'Usuário' }}
-          </span>
+          <span class="papel" [class.admin]="perfil.papel === 'ADMIN'">{{ rotulosPapel[perfil.papel] }}</span>
         </dd>
         <dt>Acessos</dt>
         <dd>{{ acessos(perfil) }}</dd>
@@ -46,7 +48,7 @@
       </dl>
       <p class="dica">
         <mat-icon>lock</mat-icon>
-        E-mail, cargo e acessos são alterados pelo administrador.
+        E-mail, departamento, cargo, nível de acesso e acessos são alterados pelo administrador.
       </p>
     </section>
 
@@ -59,19 +61,11 @@
           <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
         </mat-form-field>
 
-        <div class="linha">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Telefone</mat-label>
-            <input matInput formControlName="telefone" maxlength="20" autocomplete="tel" placeholder="(11) 91234-5678" />
-            <mat-error>{{ mensagemDeErro('telefone') }}</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Função</mat-label>
-            <input matInput formControlName="funcao" maxlength="80" placeholder="Ex.: Compras" />
-            <mat-error>{{ mensagemDeErro('funcao') }}</mat-error>
-          </mat-form-field>
-        </div>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Telefone</mat-label>
+          <input matInput formControlName="telefone" maxlength="20" autocomplete="tel" placeholder="(11) 91234-5678" />
+          <mat-error>{{ mensagemDeErro('telefone') }}</mat-error>
+        </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Bio</mat-label>

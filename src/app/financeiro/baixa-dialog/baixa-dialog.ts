@@ -3,12 +3,14 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs';
 import { Conta, TIPOS_DE_CONTA, TipoConta, hojeIso } from '../financeiro.model';
 import { FinanceiroService } from '../financeiro.service';
+import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
 export interface BaixaDialogData {
   tipo: TipoConta;
@@ -18,7 +20,16 @@ export interface BaixaDialogData {
 /** Registra o pagamento (a pagar) ou o recebimento (a receber). A API recusa datas futuras. */
 @Component({
   selector: 'app-baixa-dialog',
-  imports: [CurrencyPipe, ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule],
+  imports: [
+    CurrencyPipe,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatDatepickerModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+  ],
+  providers: [PROVEDORES_DE_DATA],
   template: `
     <h2 mat-dialog-title>{{ dados.acaoBaixa }}</h2>
     <form [formGroup]="form" (ngSubmit)="confirmar()" novalidate>
@@ -29,8 +40,19 @@ export interface BaixaDialogData {
         </p>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ dados.rotuloData }}</mat-label>
-          <input matInput type="date" formControlName="data" [max]="hoje" cdkFocusInitial />
-          @if (form.controls.data.hasError('required')) {
+          <input
+            matInput
+            [matDatepicker]="calendario"
+            formControlName="data"
+            [max]="hoje"
+            placeholder="dd/mm/aaaa"
+            cdkFocusInitial
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="calendario" />
+          <mat-datepicker #calendario />
+          @if (form.controls.data.hasError('matDatepickerParse')) {
+            <mat-error>Data inválida; use dd/mm/aaaa</mat-error>
+          } @else if (form.controls.data.hasError('required')) {
             <mat-error>Informe a data</mat-error>
           } @else {
             <mat-error>A data não pode ser futura</mat-error>

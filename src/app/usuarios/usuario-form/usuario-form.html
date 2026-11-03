@@ -7,6 +7,28 @@
 
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
   <mat-dialog-content class="formulario">
+    <div class="foto">
+      <app-avatar [nome]="usuario.nome" [url]="avatarUrl()" [tamanho]="56" />
+      <input #arquivo type="file" hidden [accept]="tiposAceitos" (change)="escolherFoto($event)" />
+      <button mat-stroked-button type="button" [disabled]="enviandoFoto()" (click)="arquivo.click()">
+        <mat-icon>photo_camera</mat-icon>
+        {{ enviandoFoto() ? 'Enviando...' : avatarUrl() ? 'Trocar foto' : 'Enviar foto' }}
+      </button>
+      @if (avatarUrl()) {
+        <button
+          mat-icon-button
+          type="button"
+          matTooltip="Remover foto"
+          aria-label="Remover foto"
+          [disabled]="enviandoFoto()"
+          (click)="removerFoto()"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      }
+      <span class="dica-foto">PNG, JPG ou WebP com até 2 MB. Grava na hora.</span>
+    </div>
+
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Nome</mat-label>
       <input matInput formControlName="nome" maxlength="100" cdkFocusInitial />
@@ -20,8 +42,27 @@
       <mat-error>{{ mensagemDeErro('email') }}</mat-error>
     </mat-form-field>
 
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Departamento</mat-label>
+        <input matInput formControlName="departamento" maxlength="80" [matAutocomplete]="listaDepartamentos" />
+        <mat-autocomplete #listaDepartamentos="matAutocomplete">
+          @for (departamento of departamentos(); track departamento) {
+            <mat-option [value]="departamento">{{ departamento }}</mat-option>
+          }
+        </mat-autocomplete>
+        <mat-error>{{ mensagemDeErro('departamento') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Cargo</mat-label>
+        <input matInput formControlName="funcao" maxlength="80" placeholder="Ex.: Desenvolvedor" />
+        <mat-error>{{ mensagemDeErro('funcao') }}</mat-error>
+      </mat-form-field>
+    </div>
+
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>Cargo</mat-label>
+      <mat-label>Nível de acesso</mat-label>
       <mat-select formControlName="papel">
         @for (papel of papeis; track papel) {
           <mat-option [value]="papel">{{ rotulos[papel] }}</mat-option>
@@ -60,7 +101,7 @@
 
     <p class="dica">
       <mat-icon>schedule</mat-icon>
-      Cargo e acessos novos valem a partir do próximo login (ou da renovação automática da sessão, em até 1 hora).
+      Nível de acesso e acessos novos valem a partir do próximo login (ou da renovação automática da sessão, em até 1 hora).
     </p>
   </mat-dialog-content>
 

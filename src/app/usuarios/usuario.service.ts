@@ -11,6 +11,9 @@ export interface AtualizarUsuario {
   email: string;
   papel: Papel;
   acessos: string[];
+  departamento: string | null;
+  /** Cargo. */
+  funcao: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -28,5 +31,15 @@ export class UsuarioService {
 
   redefinirSenha(id: string, senha: string): Observable<void> {
     return this.http.put<void>(`${this.url}/${id}/senha`, { senha });
+  }
+
+  enviarAvatar(id: string, arquivo: File): Observable<Usuario> {
+    const corpo = new FormData();
+    corpo.append('arquivo', arquivo);
+    return this.http.put<Usuario>(`${this.url}/${id}/avatar`, corpo);
+  }
+
+  removerAvatar(id: string): Observable<Usuario> {
+    return this.http.delete<Usuario>(`${this.url}/${id}/avatar`);
   }
 }

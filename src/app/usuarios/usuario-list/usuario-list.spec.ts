@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
@@ -15,7 +15,7 @@ function usuario(id: string, nome: string, papel: Usuario['papel'], acessos: str
 }
 
 describe('UsuarioList', () => {
-  const eu = usuario('admin', 'Khalil', 'ADMIN', ['*']);
+  const eu = { ...usuario('admin', 'Ana', 'ADMIN', ['*']), departamento: 'Tecnologia', funcao: 'Desenvolvedora' };
   const maria = usuario('maria', 'Maria', 'USUARIO', ['dashboard']);
   const joao = usuario('joao', 'João', 'USUARIO', []);
 
@@ -27,6 +27,7 @@ describe('UsuarioList', () => {
   let notificacao: { sucesso: ReturnType<typeof vi.fn> };
   let abrir: ReturnType<typeof vi.fn>;
   let resultadoDoDialogo: unknown;
+  let avatarAlterado: Subject<Usuario>;
 
   beforeEach(async () => {
     service = {
@@ -37,7 +38,8 @@ describe('UsuarioList', () => {
     auth = { usuario: signal(eu), atualizarUsuario: vi.fn() };
     notificacao = { sucesso: vi.fn() };
     resultadoDoDialogo = undefined;
-    abrir = vi.fn(() => ({ afterClosed: () => of(resultadoDoDialogo) }));
+    avatarAlterado = new Subject<Usuario>();
+    abrir = vi.fn(() => ({ afterClosed: () => of(resultadoDoDialogo), componentInstance: { avatarAlterado } }));
 
     TestBed.configureTestingModule({
       imports: [UsuarioList],
@@ -54,12 +56,17 @@ describe('UsuarioList', () => {
     await fixture.whenStable();
   });
 
-  it('deve listar os usuários com cargo e acessos, marcando a própria conta', () => {
+  it('deve listar departamento, cargo, nível de acesso e acessos em colunas separadas', () => {
     expect(service.listar).toHaveBeenCalledWith(0, 10);
+    const cabecalho = Array.from(elemento.querySelectorAll('th')).map((th) => th.textContent!.trim());
+    expect(cabecalho).toEqual(expect.arrayContaining(['Departamento', 'Cargo', 'Nível de acesso', 'Acessos']));
     const linhas = Array.from(elemento.querySelectorAll('tr.mat-mdc-row')).map((tr) =>
       tr.textContent!.replace(/\s+/g, ' ').trim(),
     );
-    expect(linhas[0]).toContain('Khalil');
+    expect(linhas[0]).toContain('Ana');
+    expect(linhas[0]).toContain('Tecnologia');
+    expect(linhas[0]).toContain('Desenvolvedora');
+    expect(linhas[1]).toContain('Não informado');
     expect(elemento.querySelectorAll('tr.mat-mdc-row')[0].querySelector('.voce')?.textContent).toBe('você');
     expect(linhas[0]).toContain('Administrador');
     expect(linhas[0]).toContain('Acesso total');
@@ -92,6 +99,14 @@ describe('UsuarioList', () => {
     expect(component['usuarios']().find((u) => u.id === 'maria')?.acessos).toEqual(['dashboard', 'produtos']);
     expect(auth.atualizarUsuario).toHaveBeenCalledWith(salvo);
     expect(notificacao.sucesso).toHaveBeenCalledWith('Dados de Maria atualizados.');
+  });
+
+  it('deve refletir na linha e na sessão a foto trocada dentro do diálogo', () => {
+    component['editar'](maria);
+    avatarAlterado.next({ ...maria, avatarUrl: 'https://exemplo.com/maria.png' });
+
+    expect(component['usuarios']().find((u) => u.id === 'maria')?.avatarUrl).toBe('https://exemplo.com/maria.png');
+    expect(auth.atualizarUsuario).toHaveBeenCalledWith(expect.objectContaining({ id: 'maria' }));
   });
 
   it('deve indicar ao diálogo quando o admin edita a própria conta', () => {

@@ -4,6 +4,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,6 +23,7 @@ import {
   calcularImposto,
 } from '../financeiro.model';
 import { FinanceiroService } from '../financeiro.service';
+import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
 /** Sem conta, o diálogo lança; com conta, edita. */
 export interface ContaFormData {
@@ -63,7 +65,10 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     ['max', 'O imposto deve ser no máximo 100%'],
     ['pattern', 'Use até 2 casas decimais'],
   ],
-  vencimento: [['required', 'O vencimento é obrigatório']],
+  vencimento: [
+    ['matDatepickerParse', 'Data inválida; use dd/mm/aaaa'],
+    ['required', 'O vencimento é obrigatório'],
+  ],
   chavePix: [
     ['required', 'Informe a chave Pix'],
     ['pattern', 'Informe a chave Pix'],
@@ -84,6 +89,7 @@ function textoOuNulo(valor: string): string | null {
     CurrencyPipe,
     ReactiveFormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
@@ -91,6 +97,7 @@ function textoOuNulo(valor: string): string | null {
     MatSelectModule,
     SomenteNumeros,
   ],
+  providers: [PROVEDORES_DE_DATA],
   templateUrl: './conta-form.html',
   styleUrl: './conta-form.scss',
 })

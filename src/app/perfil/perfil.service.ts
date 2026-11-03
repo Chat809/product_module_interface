@@ -14,16 +14,17 @@ export interface MeuPerfil {
   acessos: string[];
   criadoEm: string | null;
   telefone: string | null;
+  /** Cargo, somente leitura. */
   funcao: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  departamento: string | null;
 }
 
-/** Espelha o AtualizarMeuPerfilRequestDTO: e-mail, papel e acessos ficam com o administrador. */
+/** Espelha o AtualizarMeuPerfilRequestDTO: e-mail, nível, acessos, departamento e cargo ficam com o administrador. */
 export interface AtualizarMeuPerfil {
   nome: string;
   telefone: string | null;
-  funcao: string | null;
   bio: string | null;
 }
 

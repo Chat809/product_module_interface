@@ -24,8 +24,15 @@ describe('UsuarioService', () => {
     req.flush({ conteudo: [], pagina: 2, tamanho: 25, totalElementos: 0, totalPaginas: 0 });
   });
 
-  it('deve editar o usuário com PUT, enviando papel e acessos', () => {
-    const dados = { nome: 'Maria', email: 'maria@exemplo.com', papel: 'USUARIO' as const, acessos: ['dashboard'] };
+  it('deve editar o usuário com PUT, enviando nível, acessos, departamento e cargo', () => {
+    const dados = {
+      nome: 'Maria',
+      email: 'maria@exemplo.com',
+      papel: 'USUARIO' as const,
+      acessos: ['dashboard'],
+      departamento: 'Compras',
+      funcao: 'Compradora',
+    };
     service.atualizar('u1', dados).subscribe();
     const req = controle.expectOne(`${url}/u1`);
     expect(req.request.method).toBe('PUT');
@@ -39,5 +46,19 @@ describe('UsuarioService', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ senha: 'novaSenha1' });
     req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('deve enviar a foto de outra pessoa como multipart e removê-la com DELETE', () => {
+    const arquivo = new File(['x'], 'foto.png', { type: 'image/png' });
+    service.enviarAvatar('u1', arquivo).subscribe();
+    const envio = controle.expectOne(`${url}/u1/avatar`);
+    expect(envio.request.method).toBe('PUT');
+    expect((envio.request.body as FormData).get('arquivo')).toBe(arquivo);
+    envio.flush({});
+
+    service.removerAvatar('u1').subscribe();
+    const remocao = controle.expectOne(`${url}/u1/avatar`);
+    expect(remocao.request.method).toBe('DELETE');
+    remocao.flush({});
   });
 });

@@ -4,6 +4,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,6 +27,7 @@ import {
   UsuarioOpcao,
 } from '../demanda.model';
 import { DemandaService } from '../demanda.service';
+import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
 /** Sem demanda, o diálogo cria (na coluna `status`); com demanda, edita. */
 export interface DemandaFormData {
@@ -58,6 +60,7 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     ReactiveFormsModule,
     MatButtonModule,
     MatCheckboxModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
@@ -66,6 +69,7 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     MatTooltipModule,
     Avatar,
   ],
+  providers: [PROVEDORES_DE_DATA],
   templateUrl: './demanda-form.html',
   styleUrl: './demanda-form.scss',
 })

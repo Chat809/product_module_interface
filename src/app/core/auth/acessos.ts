@@ -1,6 +1,12 @@
-import { Modulo, Usuario } from './auth.model';
+import { Modulo, Papel, Usuario } from './auth.model';
 
 export const ACESSO_TOTAL = '*';
+
+/** Nível de acesso no sistema (o `papel` da API); cargo e departamento são outra coisa. */
+export const ROTULOS_PAPEL: Record<Papel, string> = {
+  ADMIN: 'Administrador',
+  USUARIO: 'Usuário',
+};
 
 /** Contas novas e sessões salvas antes da coluna `acessos` existir recebem este padrão, como na API. */
 export const ACESSOS_PADRAO: Modulo[] = ['dashboard', 'produtos', 'demandas'];

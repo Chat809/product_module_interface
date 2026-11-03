@@ -17,9 +17,10 @@ const perfil: MeuPerfil = {
   acessos: ['dashboard', 'demandas'],
   criadoEm: '2026-11-01T10:00:00Z',
   telefone: '(11) 91234-5678',
-  funcao: 'Compras',
+  funcao: 'Compradora',
   bio: null,
   avatarUrl: null,
+  departamento: 'Compras',
 };
 
 const tarefa = {
@@ -86,16 +87,18 @@ describe('MeuPerfilPage', () => {
     notificacao = { sucesso: vi.fn(), erro: vi.fn() };
   });
 
-  it('deve exibir os dados, só leitura para e-mail, cargo e acessos, e preencher o formulário', async () => {
+  it('deve exibir departamento, cargo e nível só para leitura e preencher o formulário', async () => {
     await criar();
     const texto = elemento.textContent!;
     expect(texto).toContain('maria@exemplo.com');
+    expect(texto).toContain('Compras');
+    expect(texto).toContain('Compradora');
+    expect(texto).toContain('Nível de acesso');
     expect(texto).toContain('Usuário');
     expect(texto).toContain('Dashboard, Demandas');
     expect(component['form'].getRawValue()).toEqual({
       nome: 'Maria Souza',
       telefone: '(11) 91234-5678',
-      funcao: 'Compras',
       bio: '',
     });
     expect(auth.atualizarUsuario).toHaveBeenCalledWith(expect.objectContaining({ id: 'u1', avatarUrl: null }));
@@ -120,10 +123,10 @@ describe('MeuPerfilPage', () => {
 
   it('deve salvar enviando campos vazios como nulos e atualizar a sessão', async () => {
     await criar();
-    component['form'].patchValue({ nome: '  Maria S.  ', telefone: '', funcao: ' ', bio: 'Oi' });
+    component['form'].patchValue({ nome: '  Maria S.  ', telefone: '', bio: 'Oi' });
     component['salvar']();
 
-    expect(perfilService.atualizar).toHaveBeenCalledWith({ nome: 'Maria S.', telefone: null, funcao: null, bio: 'Oi' });
+    expect(perfilService.atualizar).toHaveBeenCalledWith({ nome: 'Maria S.', telefone: null, bio: 'Oi' });
     expect(auth.atualizarUsuario).toHaveBeenLastCalledWith(expect.objectContaining({ nome: 'Maria S.' }));
     expect(notificacao.sucesso).toHaveBeenCalledWith('Perfil atualizado.');
   });

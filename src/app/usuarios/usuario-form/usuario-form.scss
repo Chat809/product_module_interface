@@ -16,6 +16,25 @@
   padding-top: 8px !important;
 }
 
+.foto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.dica-foto {
+  flex-basis: 100%;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
 .acessos {
   display: flex;
   flex-direction: column;

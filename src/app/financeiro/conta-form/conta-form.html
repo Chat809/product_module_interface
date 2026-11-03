@@ -68,7 +68,9 @@
     <div class="linha">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Vencimento</mat-label>
-        <input matInput type="date" formControlName="vencimento" />
+        <input matInput [matDatepicker]="calendarioVencimento" formControlName="vencimento" placeholder="dd/mm/aaaa" />
+        <mat-datepicker-toggle matIconSuffix [for]="calendarioVencimento" />
+        <mat-datepicker #calendarioVencimento />
         <mat-error>{{ mensagemDeErro('vencimento') }}</mat-error>
       </mat-form-field>
 

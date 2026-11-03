@@ -21,12 +21,30 @@
 
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-data">
     <mat-label>Vence de</mat-label>
-    <input matInput type="date" [ngModel]="filtro().vencimentoDe" (ngModelChange)="filtrar({ vencimentoDe: $event })" />
+    <input
+      matInput
+      [matDatepicker]="calendarioDe"
+      [max]="filtro().vencimentoAte || null"
+      placeholder="dd/mm/aaaa"
+      [ngModel]="filtro().vencimentoDe"
+      (ngModelChange)="filtrarData('vencimentoDe', $event)"
+    />
+    <mat-datepicker-toggle matIconSuffix [for]="calendarioDe" />
+    <mat-datepicker #calendarioDe />
   </mat-form-field>
 
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-data">
     <mat-label>até</mat-label>
-    <input matInput type="date" [ngModel]="filtro().vencimentoAte" (ngModelChange)="filtrar({ vencimentoAte: $event })" />
+    <input
+      matInput
+      [matDatepicker]="calendarioAte"
+      [min]="filtro().vencimentoDe || null"
+      placeholder="dd/mm/aaaa"
+      [ngModel]="filtro().vencimentoAte"
+      (ngModelChange)="filtrarData('vencimentoAte', $event)"
+    />
+    <mat-datepicker-toggle matIconSuffix [for]="calendarioAte" />
+    <mat-datepicker #calendarioAte />
   </mat-form-field>
 
   <span class="espaco"></span>

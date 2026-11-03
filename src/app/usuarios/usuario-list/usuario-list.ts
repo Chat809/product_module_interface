@@ -8,14 +8,14 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter, finalize } from 'rxjs';
-import { ACESSO_TOTAL, MODULOS } from '../../core/auth/acessos';
+import { ACESSO_TOTAL, MODULOS, ROTULOS_PAPEL } from '../../core/auth/acessos';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { Avatar } from '../../shared/avatar/avatar';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { SenhaDialog } from '../senha-dialog/senha-dialog';
-import { ROTULOS_PAPEL, UsuarioFormData, UsuarioFormDialog } from '../usuario-form/usuario-form';
+import { UsuarioFormData, UsuarioFormDialog } from '../usuario-form/usuario-form';
 import { UsuarioService } from '../usuario.service';
 
 @Component({
@@ -40,7 +40,7 @@ export class UsuarioList implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(AuthService);
 
-  protected readonly colunas = ['nome', 'email', 'papel', 'acessos', 'criadoEm', 'acoes'];
+  protected readonly colunas = ['nome', 'departamento', 'funcao', 'papel', 'acessos', 'criadoEm', 'acoes'];
 
   protected readonly usuarios = signal<Usuario[]>([]);
   protected readonly total = signal(0);
@@ -81,7 +81,7 @@ export class UsuarioList implements OnInit {
     return usuario.id === this.auth.usuario()?.id;
   }
 
-  protected cargo(usuario: Usuario): string {
+  protected nivel(usuario: Usuario): string {
     return ROTULOS_PAPEL[usuario.papel];
   }
 
@@ -94,12 +94,18 @@ export class UsuarioList implements OnInit {
   }
 
   protected editar(usuario: Usuario): void {
-    this.dialog
-      .open<UsuarioFormDialog, UsuarioFormData, Usuario>(UsuarioFormDialog, {
-        data: { usuario, ehVoce: this.ehVoce(usuario) },
-        width: '520px',
-        maxWidth: '95vw',
-      })
+    const dialogo = this.dialog.open<UsuarioFormDialog, UsuarioFormData, Usuario>(UsuarioFormDialog, {
+      data: { usuario, ehVoce: this.ehVoce(usuario) },
+      width: '560px',
+      maxWidth: '95vw',
+    });
+    dialogo.componentInstance.avatarAlterado.subscribe((salvo) => {
+      this.usuarios.update((lista) =>
+        lista.map((u) => (u.id === salvo.id ? { ...u, avatarUrl: salvo.avatarUrl } : u)),
+      );
+      this.auth.atualizarUsuario(salvo);
+    });
+    dialogo
       .afterClosed()
       .pipe(filter((salvo): salvo is Usuario => !!salvo))
       .subscribe((salvo) => {

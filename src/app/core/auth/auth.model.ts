@@ -13,6 +13,9 @@ export interface Usuario {
   criadoEm: string | null;
   /** Ausente na resposta do login; vem de `/usuarios/me` e da listagem de usuários. */
   avatarUrl?: string | null;
+  /** Departamento e cargo (`funcao`) na empresa, definidos pelo admin; ausentes na resposta do login. */
+  departamento?: string | null;
+  funcao?: string | null;
 }
 
 /** Espelha o SessaoDTO da API. */

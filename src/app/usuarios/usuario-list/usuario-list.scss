@@ -43,8 +43,22 @@
   gap: 10px;
 }
 
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .nome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font: var(--mat-sys-title-small);
+}
+
+.vazio {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
 }
 
 .voce {
@@ -59,6 +73,10 @@
 .data {
   white-space: nowrap;
   color: var(--mat-sys-on-surface-variant);
+}
+
+.email {
+  font: var(--mat-sys-body-small);
 }
 
 .papel,

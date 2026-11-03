@@ -1,7 +1,9 @@
 <header class="cabecalho">
   <div>
     <h1>Usuários</h1>
-    <p class="subtitulo">Contas com acesso ao painel, com o cargo e os módulos que cada uma pode usar.</p>
+    <p class="subtitulo">
+      Quem é cada pessoa na empresa (departamento e cargo) e o que ela pode fazer no sistema (nível e módulos).
+    </p>
   </div>
   <button mat-stroked-button (click)="carregar()" [disabled]="carregando()">
     <mat-icon>refresh</mat-icon>
@@ -21,27 +23,41 @@
   <div class="tabela">
     <table mat-table [dataSource]="usuarios()">
       <ng-container matColumnDef="nome">
-        <th mat-header-cell *matHeaderCellDef>Nome</th>
+        <th mat-header-cell *matHeaderCellDef>Usuário</th>
         <td mat-cell *matCellDef="let usuario">
           <div class="pessoa">
-            <app-avatar [nome]="usuario.nome" [url]="usuario.avatarUrl" />
-            <span class="nome">{{ usuario.nome }}</span>
-            @if (ehVoce(usuario)) {
-              <span class="voce">você</span>
-            }
+            <app-avatar [nome]="usuario.nome" [url]="usuario.avatarUrl" [tamanho]="36" />
+            <div class="identificacao">
+              <span class="nome">
+                {{ usuario.nome }}
+                @if (ehVoce(usuario)) {
+                  <span class="voce">você</span>
+                }
+              </span>
+              <span class="email">{{ usuario.email }}</span>
+            </div>
           </div>
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef>E-mail</th>
-        <td mat-cell *matCellDef="let usuario" class="email">{{ usuario.email }}</td>
+      <ng-container matColumnDef="departamento">
+        <th mat-header-cell *matHeaderCellDef>Departamento</th>
+        <td mat-cell *matCellDef="let usuario" [class.vazio]="!usuario.departamento">
+          {{ usuario.departamento || 'Não informado' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="funcao">
+        <th mat-header-cell *matHeaderCellDef>Cargo</th>
+        <td mat-cell *matCellDef="let usuario" [class.vazio]="!usuario.funcao">
+          {{ usuario.funcao || 'Não informado' }}
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="papel">
-        <th mat-header-cell *matHeaderCellDef>Cargo</th>
+        <th mat-header-cell *matHeaderCellDef>Nível de acesso</th>
         <td mat-cell *matCellDef="let usuario">
-          <span class="papel" [class.admin]="usuario.papel === 'ADMIN'">{{ cargo(usuario) }}</span>
+          <span class="papel" [class.admin]="usuario.papel === 'ADMIN'">{{ nivel(usuario) }}</span>
         </td>
       </ng-container>
 
@@ -60,7 +76,7 @@
 
       <ng-container matColumnDef="criadoEm">
         <th mat-header-cell *matHeaderCellDef>Criado em</th>
-        <td mat-cell *matCellDef="let usuario" class="data">{{ usuario.criadoEm | date: 'short' }}</td>
+        <td mat-cell *matCellDef="let usuario" class="data">{{ usuario.criadoEm | date: 'dd/MM/yyyy' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="acoes">
@@ -69,7 +85,7 @@
           <button
             mat-icon-button
             (click)="editar(usuario)"
-            matTooltip="Editar nome, e-mail, cargo e acessos"
+            matTooltip="Editar dados, foto, departamento, cargo, nível e acessos"
             [attr.aria-label]="'Editar ' + usuario.nome"
           >
             <mat-icon>edit</mat-icon>

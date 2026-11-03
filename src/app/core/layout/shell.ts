@@ -12,7 +12,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { PerfilService } from '../../perfil/perfil.service';
 import { Avatar } from '../../shared/avatar/avatar';
-import { descreverAcessos } from '../auth/acessos';
+import { ROTULOS_PAPEL, descreverAcessos } from '../auth/acessos';
+import { Usuario } from '../auth/auth.model';
 import { AuthService } from '../auth/auth.service';
 import { Tema } from '../tema/tema.service';
 
@@ -73,8 +74,11 @@ interface ItemDeMenu {
           <div class="conta" (click)="$event.stopPropagation()">
             <strong>{{ usuario.nome }}</strong>
             <span>{{ usuario.email }}</span>
+            @if (cargoEDepartamento(usuario); as trabalho) {
+              <span>{{ trabalho }}</span>
+            }
             <span class="papel" [class.admin]="usuario.papel === 'ADMIN'">
-              {{ usuario.papel === 'ADMIN' ? 'Administrador' : 'Usuário' }}
+              {{ rotulosPapel[usuario.papel] }}
             </span>
             <span class="acessos">Acessos: {{ descreverAcessos(usuario) }}</span>
           </div>
@@ -238,13 +242,18 @@ export class Shell implements OnInit {
   protected readonly auth = inject(AuthService);
   private readonly perfilService = inject(PerfilService);
   protected readonly descreverAcessos = descreverAcessos;
+  protected readonly rotulosPapel = ROTULOS_PAPEL;
 
-  /** Traz a foto e o nome atuais para o topo; se falhar, o painel segue com os dados da sessão. */
+  /** Traz foto, nome, cargo e departamento atuais para o topo; se falhar, o painel segue com os dados da sessão. */
   ngOnInit(): void {
     this.perfilService.buscar(true).subscribe({
-      next: ({ telefone, funcao, bio, ...usuario }) => this.auth.atualizarUsuario(usuario),
+      next: ({ telefone, bio, ...usuario }) => this.auth.atualizarUsuario(usuario),
       error: () => undefined,
     });
+  }
+
+  protected cargoEDepartamento(usuario: Usuario): string {
+    return [usuario.funcao, usuario.departamento].filter(Boolean).join(' · ');
   }
 
   protected readonly itens = computed<ItemDeMenu[]>(() =>

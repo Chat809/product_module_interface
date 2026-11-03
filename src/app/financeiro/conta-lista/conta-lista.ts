@@ -3,6 +3,7 @@ import { Component, DestroyRef, OnInit, computed, inject, input, output, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +28,7 @@ import {
   TipoConta,
 } from '../financeiro.model';
 import { FinanceiroService } from '../financeiro.service';
+import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
 const ESPERA_DA_BUSCA_MS = 300;
 
@@ -38,6 +40,7 @@ const ESPERA_DA_BUSCA_MS = 300;
     DecimalPipe,
     FormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -48,6 +51,7 @@ const ESPERA_DA_BUSCA_MS = 300;
     MatTooltipModule,
     Skeleton,
   ],
+  providers: [PROVEDORES_DE_DATA],
   templateUrl: './conta-lista.html',
   styleUrl: './conta-lista.scss',
 })
@@ -121,6 +125,14 @@ export class ContaLista implements OnInit {
     this.filtro.update((f) => ({ ...f, ...mudanca }));
     this.pagina.set(0);
     this.carregar();
+  }
+
+  /** Enquanto a data é digitada o campo vale null; só recarrega quando a data completa muda de fato. */
+  protected filtrarData(campo: 'vencimentoDe' | 'vencimentoAte', data: string | null): void {
+    const valor = data ?? '';
+    if (this.filtro()[campo] !== valor) {
+      this.filtrar({ [campo]: valor });
+    }
   }
 
   protected mudarPagina(evento: PageEvent): void {

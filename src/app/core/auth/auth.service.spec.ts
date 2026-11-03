@@ -59,17 +59,28 @@ describe('AuthService', () => {
     expect(auth.ehAdmin()).toBe(false);
   });
 
-  it('deve manter a foto do usuário quando o login não a trouxer', () => {
+  it('deve manter foto, departamento e cargo quando o login os trouxer vazios', () => {
     const anterior = sessaoDeTeste();
     anterior.usuario.avatarUrl = 'https://exemplo.com/foto.png';
+    anterior.usuario.departamento = 'Tecnologia';
+    anterior.usuario.funcao = 'Desenvolvedora';
     localStorage.setItem('painel.sessao', JSON.stringify(anterior));
     const auth = criar();
 
     auth.entrar('maria@exemplo.com', 'segredo1').subscribe();
-    controle.expectOne(`${url}/login`).flush(sessaoDeTeste('USUARIO', 'novo'));
+    const nova = sessaoDeTeste('USUARIO', 'novo');
+    nova.usuario.avatarUrl = null;
+    nova.usuario.departamento = null;
+    controle.expectOne(`${url}/login`).flush(nova);
 
     expect(auth.token()).toBe('novo');
-    expect(auth.usuario()?.avatarUrl).toBe('https://exemplo.com/foto.png');
+    expect(auth.usuario()).toEqual(
+      expect.objectContaining({
+        avatarUrl: 'https://exemplo.com/foto.png',
+        departamento: 'Tecnologia',
+        funcao: 'Desenvolvedora',
+      }),
+    );
   });
 
   it('deve ignorar uma sessão guardada corrompida', () => {
@@ -173,6 +184,10 @@ describe('AuthService', () => {
     auth.atualizarUsuario({ ...eu, nome: 'Maria S.' });
     expect(auth.usuario()?.nome).toBe('Maria S.');
     expect(JSON.parse(localStorage.getItem('painel.sessao')!).usuario.nome).toBe('Maria S.');
+
+    auth.atualizarUsuario({ ...eu, avatarUrl: 'https://exemplo.com/foto.png' });
+    auth.atualizarUsuario({ ...eu, avatarUrl: null });
+    expect(auth.usuario()?.avatarUrl).toBeNull();
   });
 
   it('deve acordar a API uma única vez, sem passar pelos interceptors', () => {

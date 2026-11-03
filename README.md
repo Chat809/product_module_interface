@@ -3,7 +3,7 @@
 [![CI](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml/badge.svg)](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml)
 ![Angular](https://img.shields.io/badge/Angular-22-dd0031)
 ![Angular Material](https://img.shields.io/badge/Angular%20Material-22-3f51b5)
-![Testes](https://img.shields.io/badge/testes-202%20passando-success)
+![Testes](https://img.shields.io/badge/testes-211%20passando-success)
 
 Painel em Angular que consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot, publicada no Render). Começou como a interface do CRUD de produtos pedido no teste técnico e hoje também tem login (e-mail e senha ou Google), acessos por módulo, gestão de usuários, perfil com foto, um quadro Kanban de demandas e um módulo financeiro.
 
@@ -53,7 +53,7 @@ Todas as telas e rotas (conferidas com `app.routes.ts`):
 | Produtos `/produtos` | Módulo `produtos` | Buscar, filtrar, ordenar; cadastrar, editar, excluir; registrar entrada e saída e ver o histórico |
 | Demandas `/demandas` | Módulo `demandas` | Quadro Kanban: criar, editar, arrastar entre colunas, checklist, responsáveis, filtros |
 | Financeiro `/financeiro` | Módulo `financeiro` | Resumo; contas a pagar e a receber com imposto e Pix; dar baixa, cancelar, excluir |
-| Usuários `/usuarios` | Só administrador | Editar nome, e-mail, cargo e acessos; definir nova senha |
+| Usuários `/usuarios` | Só administrador | Editar nome, e-mail, departamento, cargo, nível de acesso, acessos e foto; definir nova senha |
 | Meu perfil `/perfil` | Logado (qualquer conta) | Editar nome, telefone, função e bio; enviar foto; ver "Minhas tarefas" |
 | Sem acesso `/sem-acesso` | Logado | Aviso de que nenhum módulo foi liberado |
 
@@ -95,21 +95,21 @@ Comportamentos globais: menu lateral montado com os módulos liberados, menu da 
 
 ### Usuários e acessos
 
-| Usuários, cargos e acessos | Edição com acessos por módulo |
+| Departamento, cargo, nível de acesso e acessos | Edição com foto, departamento, cargo e acessos |
 |---|---|
-| ![Lista de usuários com foto, cargo e acessos](docs/usuarios.png) | ![Modal de edição com cargo e caixas de acesso](docs/usuario-edicao.png) |
+| ![Lista de usuários com colunas de departamento, cargo, nível de acesso e acessos](docs/usuarios.png) | ![Modal de edição com foto, departamento, cargo, nível de acesso e caixas de acesso](docs/usuario-edicao.png) |
 
-**O que faz:** o administrador vê todas as contas (com foto), edita nome, e-mail, cargo e módulos liberados e define nova senha. Módulos: Dashboard, Produtos, Demandas, Financeiro, ou acesso total (`*`). Usuários é exclusivo de administradores.
+**O que faz:** o administrador vê todas as contas em uma tabela com colunas separadas para Departamento, Cargo, Nível de acesso (só **Administrador** ou **Usuário**) e Acessos. No modal, edita nome, e-mail, departamento (com sugestões, mas aceita qualquer nome), cargo, nível, módulos liberados e a foto da pessoa, e define nova senha. A foto é gravada na hora, sem esperar o "Salvar". Módulos: Dashboard, Produtos, Demandas, Financeiro, ou acesso total (`*`). Usuários é exclusivo de administradores.
 
 **Como foi feita:** `MODULOS` (em `core/auth/acessos.ts`) é a fonte única: gera o menu, os guards (`moduloGuard`) e as caixas do modal. Conta nova recebe Dashboard, Produtos e Demandas; Financeiro só quando o admin libera.
 
-**Por quê:** os guards são conveniência de navegação, a API confere de novo cada acesso. Financeiro fica fora do padrão por ter dados sensíveis. O e-mail só é editável pelo admin porque é o login da pessoa. Acessos novos valem no próximo login ou na renovação da sessão (até 1 hora).
+**Por quê:** os guards são conveniência de navegação, a API confere de novo cada acesso. Financeiro fica fora do padrão por ter dados sensíveis. Nível de acesso diz o que a pessoa pode fazer no sistema; departamento e cargo dizem quem ela é na empresa, por isso ficam em colunas diferentes. E-mail, departamento e cargo só são editáveis pelo admin. Acessos novos valem no próximo login ou na renovação da sessão (até 1 hora).
 
 ### Meu perfil
 
 ![Página Meu perfil com foto, dados pessoais e Minhas tarefas](docs/perfil.png)
 
-**O que faz:** qualquer conta edita nome, telefone, função e bio, envia ou remove a foto (PNG, JPG ou WebP até 2 MB) e vê "Minhas tarefas": as demandas abertas em que é responsável, com atalho que abre a demanda no quadro. E-mail, cargo e acessos aparecem só para leitura.
+**O que faz:** qualquer conta edita nome, telefone e bio, envia ou remove a foto (PNG, JPG ou WebP até 2 MB) e vê "Minhas tarefas": as demandas abertas em que é responsável, com atalho que abre a demanda no quadro. E-mail, departamento, cargo, nível de acesso e acessos aparecem só para leitura.
 
 **Como foi feita:** `PerfilService` usa `GET`/`PUT /usuarios/me`, `PUT /usuarios/me/avatar` (multipart, campo `arquivo`) e `DELETE /usuarios/me/avatar`. As tarefas vêm de `GET /demandas?responsavel=me&abertas=true`. Depois de salvar, a sessão é atualizada para o topo mostrar o mesmo nome e foto; ao abrir o painel, o `Shell` busca o perfil em segundo plano, sem aviso se falhar.
 
@@ -129,7 +129,7 @@ Comportamentos globais: menu lateral montado com os módulos liberados, menu da 
 
 ![Financeiro com resumo e contas a pagar](docs/financeiro.png)
 
-**O que faz:** cards de resumo (a pagar, a receber, vencidos, saldo previsto e resultado do mês) e duas abas, Contas a pagar e Contas a receber, com filtros por situação (pendentes, vencidas, quitadas, canceladas), busca, período de vencimento e paginação. O modal de lançamento mostra o imposto e o valor líquido enquanto se digita e pede a chave Pix quando a forma é Pix. Ações: dar baixa com a data, editar, cancelar e excluir.
+**O que faz:** cards de resumo (a pagar, a receber, vencidos, saldo previsto e resultado do mês) e duas abas, Contas a pagar e Contas a receber, com filtros por situação (pendentes, vencidas, quitadas, canceladas), busca, período de vencimento (com calendário) e paginação. O modal de lançamento mostra o imposto e o valor líquido enquanto se digita e pede a chave Pix quando a forma é Pix. Ações: dar baixa com a data, editar, cancelar e excluir.
 
 **Como foi feita:** `FinanceiroService` usa `/financeiro/resumo` e `/financeiro/contas-pagar|contas-receber` (lista paginada, CRUD, `PATCH .../baixa` e `.../cancelamento`). A prévia usa a mesma conta do banco (`calcularImposto`, arredondando em centavos). Depois de cada ação, a lista e o resumo são recarregados.
 
@@ -172,7 +172,7 @@ Build: `npm run build`, com saída em `dist/product-module-interface/browser`.
 npm test
 ```
 
-São 202 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
+São 211 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
 
 | Arquivo | O que cobre |
 |---|---|
@@ -183,11 +183,12 @@ São 202 testes com Vitest. Cada teste sobe um componente ou serviço isolado pe
 | `auth.interceptor.spec.ts`, `auth.guards.spec.ts`, `acessos.spec.ts` | Token só para a API e renovação em 401; guards por sessão e módulo; regra de acesso igual à da API |
 | `error.interceptor.spec.ts` | Mensagem por status (0, 400, 401, 403, 409, 413, 422, genérico) e requisições silenciosas |
 | `login.spec.ts`, `registro.spec.ts`, `espera.spec.ts` | Validações, retorno à rota pedida, despertar da API e tempo limite |
-| `usuario.service.spec.ts`, `usuario-list.spec.ts`, `usuario-form.spec.ts`, `senha-dialog.spec.ts` | Lista, edição de cargo e acessos (incluindo Demandas e Financeiro), e nova senha |
+| `usuario.service.spec.ts`, `usuario-list.spec.ts`, `usuario-form.spec.ts`, `senha-dialog.spec.ts` | Lista com departamento, cargo e nível; edição com foto e acessos (incluindo Demandas e Financeiro), e nova senha |
 | `avatar.spec.ts`, `perfil.service.spec.ts`, `meu-perfil.spec.ts` | Iniciais e foto com fallback; GET/PUT do perfil e envio multipart; validação de foto, campos nulos, Minhas tarefas e módulo ausente |
 | `demanda.service.spec.ts`, `demanda-board.spec.ts`, `demanda-form.spec.ts` | Endpoints; colunas, filtros, arrastar com posição real, recarga em erro, abrir pela URL; criação com checklist, responsáveis removidos e exclusão permitida |
 | `financeiro.model.spec.ts`, `financeiro.service.spec.ts` | Cálculo de imposto igual ao do banco; tradução dos filtros em parâmetros e endpoints |
 | `conta-lista.spec.ts`, `conta-form.spec.ts`, `baixa-dialog.spec.ts` | Tabela, filtros, busca com espera e ações; prévia do líquido e regra da chave Pix; data da baixa |
+| `data-iso.adapter.spec.ts` | Datas digitadas em dd/mm/aaaa, datas impossíveis, nomes em português e contas do calendário sem erro de fuso |
 | `app.spec.ts`, `tema.service.spec.ts`, `paginador-intl.spec.ts`, `toast.spec.ts` | Rotas e bloqueios (Financeiro sem módulo, Meu perfil para todos); tema; paginação em português; toasts |
 
 ### Estrutura e rotas
@@ -204,7 +205,7 @@ src/app
 ├── shared                         Avatar, diálogo de confirmação, skeleton, loading e diretiva de números
 ├── dashboard                      Indicadores e reposição
 ├── produtos                       Store, filtros, lista, formulário e movimentações
-├── usuarios                       Lista, edição de cargo e acessos, nova senha
+├── usuarios                       Lista, edição de departamento, cargo, nível, acessos e foto, nova senha
 ├── perfil                         Meu perfil (dados, foto e Minhas tarefas)
 ├── demandas                       Quadro Kanban e modal da demanda
 └── financeiro                     Resumo, lista por tipo de conta, modal de lançamento e baixa
@@ -216,6 +217,7 @@ As rotas e quem acessa cada uma estão em [O que tem no painel](#o-que-tem-no-pa
 
 - **Organização por responsabilidade:** `core` (infraestrutura), `shared` (reutilizáveis) e uma pasta por funcionalidade.
 - **Signals em vez de biblioteca de estado:** o catálogo, o quadro e as listas usam `signal` e `computed`; NgRx seria complexidade sem ganho neste escopo.
+- **Calendário com datas ISO:** os campos de data usam o datepicker do Angular Material com um adaptador próprio (`shared/datas/data-iso.adapter.ts`): a tela mostra e aceita `dd/mm/aaaa`, o formulário guarda `aaaa-mm-dd` como a API. O campo nativo do navegador mostrava `mm/dd/yyyy` e nem sempre abria o calendário. Sem `Date`, a meia-noite não vira o dia anterior por causa do fuso.
 - **Modais em vez de páginas:** cadastrar, editar, movimentar e lançar não tiram a pessoa da lista.
 - **Erros centralizados:** o `errorInterceptor` mostra a mensagem de qualquer erro HTTP; os componentes só tratam erros por campo. Requisições de segundo plano usam o contexto `SEM_AVISO_DE_ERRO`.
 - **Autenticação só pela API:** o painel não fala com o Supabase além do redirecionamento do Google.

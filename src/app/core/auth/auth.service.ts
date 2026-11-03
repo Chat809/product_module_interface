@@ -58,7 +58,7 @@ export class AuthService {
   atualizarUsuario(usuario: Usuario): void {
     const atual = this.sessao();
     if (atual && atual.usuario.id === usuario.id) {
-      this.guardar({ ...atual, usuario });
+      this.persistir({ ...atual, usuario });
     }
   }
 
@@ -144,12 +144,25 @@ export class AuthService {
     this.documento.location.assign(url);
   }
 
-  /** Login e renovação não trazem a foto; ela é mantida da sessão anterior do mesmo usuário. */
+  /** Login e renovação não trazem foto, departamento nem cargo; eles são mantidos da sessão anterior do mesmo usuário. */
   private guardar(sessao: Sessao): void {
     const anterior = this.sessao()?.usuario;
-    if (sessao.usuario.avatarUrl === undefined && anterior?.id === sessao.usuario.id) {
-      sessao = { ...sessao, usuario: { ...sessao.usuario, avatarUrl: anterior.avatarUrl } };
+    if (anterior?.id === sessao.usuario.id) {
+      const { avatarUrl, departamento, funcao } = sessao.usuario;
+      sessao = {
+        ...sessao,
+        usuario: {
+          ...sessao.usuario,
+          avatarUrl: avatarUrl ?? anterior.avatarUrl,
+          departamento: departamento ?? anterior.departamento,
+          funcao: funcao ?? anterior.funcao,
+        },
+      };
     }
+    this.persistir(sessao);
+  }
+
+  private persistir(sessao: Sessao): void {
     this.sessao.set(sessao);
     localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
   }

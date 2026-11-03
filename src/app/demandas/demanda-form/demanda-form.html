@@ -54,7 +54,10 @@
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Prazo</mat-label>
-        <input matInput type="date" formControlName="prazo" />
+        <input matInput [matDatepicker]="calendarioPrazo" formControlName="prazo" placeholder="dd/mm/aaaa" />
+        <mat-datepicker-toggle matIconSuffix [for]="calendarioPrazo" />
+        <mat-datepicker #calendarioPrazo />
+        <mat-error>Data inválida; use dd/mm/aaaa</mat-error>
       </mat-form-field>
     </div>
 

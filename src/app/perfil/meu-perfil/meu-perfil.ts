@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { Observable, finalize } from 'rxjs';
-import { descreverAcessos } from '../../core/auth/acessos';
+import { ROTULOS_PAPEL, descreverAcessos } from '../../core/auth/acessos';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
@@ -20,7 +20,7 @@ import { Avatar } from '../../shared/avatar/avatar';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { MeuPerfil, PerfilService, TAMANHO_MAXIMO_AVATAR, TIPOS_DE_AVATAR } from '../perfil.service';
 
-type Campo = 'nome' | 'telefone' | 'funcao' | 'bio';
+type Campo = 'nome' | 'telefone' | 'bio';
 
 const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
   nome: [
@@ -32,7 +32,6 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     ['pattern', 'Use apenas números, espaços, parênteses, + e -'],
     ['maxlength', 'O telefone deve ter no máximo 20 caracteres'],
   ],
-  funcao: [['maxlength', 'A função deve ter no máximo 80 caracteres']],
   bio: [['maxlength', 'A bio deve ter no máximo 500 caracteres']],
 };
 
@@ -70,6 +69,7 @@ export class MeuPerfilPage implements OnInit {
   protected readonly tipos = TIPOS;
   protected readonly rotuloDoStatus = rotuloDoStatus;
   protected readonly tiposAceitos = TIPOS_DE_AVATAR.join(',');
+  protected readonly rotulosPapel = ROTULOS_PAPEL;
 
   protected readonly perfil = signal<MeuPerfil | null>(null);
   protected readonly erroAoCarregar = signal(false);
@@ -81,7 +81,6 @@ export class MeuPerfilPage implements OnInit {
   protected readonly form = this.fb.group({
     nome: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(/\S/)]],
     telefone: ['', [Validators.maxLength(20), Validators.pattern(/^[0-9()+\-\s]*$/)]],
-    funcao: ['', [Validators.maxLength(80)]],
     bio: ['', [Validators.maxLength(500)]],
   });
 
@@ -125,7 +124,6 @@ export class MeuPerfilPage implements OnInit {
       .atualizar({
         nome: valor.nome.trim(),
         telefone: textoOuNulo(valor.telefone),
-        funcao: textoOuNulo(valor.funcao),
         bio: textoOuNulo(valor.bio),
       })
       .pipe(
@@ -206,11 +204,10 @@ export class MeuPerfilPage implements OnInit {
       this.form.reset({
         nome: perfil.nome,
         telefone: perfil.telefone ?? '',
-        funcao: perfil.funcao ?? '',
         bio: perfil.bio ?? '',
       });
     }
-    const { telefone, funcao, bio, ...usuario } = perfil;
+    const { telefone, bio, ...usuario } = perfil;
     this.auth.atualizarUsuario(usuario);
   }
 }
