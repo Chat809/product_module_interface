@@ -7,9 +7,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { Loading } from '../../shared/loading/loading';
 import { ProdutoRequest } from '../produto.model';
@@ -58,7 +58,7 @@ export class ProdutoForm implements OnInit {
 
   private readonly produtoService = inject(ProdutoService);
   private readonly router = inject(Router);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notificacao = inject(Notificacao);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(NonNullableFormBuilder);
 
@@ -132,12 +132,8 @@ export class ProdutoForm implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.snackBar.open(
+          this.notificacao.sucesso(
             id === undefined ? 'Produto cadastrado.' : 'Produto atualizado.',
-            'Fechar',
-            {
-              duration: 3000,
-            },
           );
           this.router.navigate(['/produtos']);
         },

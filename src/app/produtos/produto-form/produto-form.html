@@ -10,7 +10,7 @@
 } @else {
   <mat-card appearance="outlined">
     <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="salvar()" class="formulario" novalidate>
+      <form [formGroup]="form" (ngSubmit)="salvar()" class="formulario" novalidate autocomplete="off">
         <mat-form-field appearance="outline">
           <mat-label>Nome</mat-label>
           <input matInput formControlName="nome" maxlength="120" />

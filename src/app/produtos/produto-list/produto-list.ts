@@ -6,12 +6,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { filter, finalize, switchMap } from 'rxjs';
+import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { Loading } from '../../shared/loading/loading';
 import { Produto } from '../produto.model';
@@ -39,7 +39,7 @@ type ColunaOrdenavel = 'nome' | 'preco' | 'quantidadeEmEstoque';
 export class ProdutoList implements OnInit {
   private readonly produtoService = inject(ProdutoService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notificacao = inject(Notificacao);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly colunas = ['nome', 'descricao', 'preco', 'quantidadeEmEstoque', 'acoes'];
@@ -104,7 +104,7 @@ export class ProdutoList implements OnInit {
       .subscribe({
         next: () => {
           this.produtos.update((lista) => lista.filter((p) => p.id !== produto.id));
-          this.snackBar.open('Produto excluído.', 'Fechar', { duration: 3000 });
+          this.notificacao.sucesso('Produto excluído.');
         },
         // O interceptor já exibe o erro; recarrega para refletir o estado real da API.
         error: () => this.carregar(),

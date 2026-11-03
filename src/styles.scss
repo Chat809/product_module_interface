@@ -35,5 +35,87 @@ body {
   // Reset the user agent margin.
   margin: 0;
   height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-/* You can add global styles to this file, and also import other style files */
+
+// Padrão visual do painel: toda customização deve partir destes tokens
+// e das variáveis --mat-sys-* do tema, nunca de cores ou fontes fixas.
+:root {
+  --app-fonte: Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --app-raio: 12px;
+  --app-transicao: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body,
+input,
+textarea,
+button,
+select {
+  font-family: var(--app-fonte);
+}
+
+// Campos de formulário
+.mat-mdc-form-field {
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: var(--app-raio),
+    )
+  );
+
+  .mat-mdc-text-field-wrapper {
+    border-radius: var(--app-raio);
+    transition: box-shadow var(--app-transicao), background-color var(--app-transicao);
+  }
+
+  .mdc-notched-outline > * {
+    transition: border-color var(--app-transicao), border-width var(--app-transicao);
+  }
+
+  &:hover .mat-mdc-text-field-wrapper {
+    background-color: color-mix(in srgb, var(--mat-sys-primary) 3%, transparent);
+  }
+
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--mat-sys-primary);
+  }
+}
+
+// Remove as setas dos campos numéricos
+input[type='number'] {
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+// Toasts (aplicados pelo serviço Notificacao)
+.toast-sucesso {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: var(--mat-sys-primary),
+      supporting-text-color: var(--mat-sys-on-primary),
+      button-color: var(--mat-sys-on-primary),
+      container-shape: var(--app-raio),
+    )
+  );
+}
+
+.toast-erro {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: var(--mat-sys-error),
+      supporting-text-color: var(--mat-sys-on-error),
+      button-color: var(--mat-sys-on-error),
+      container-shape: var(--app-raio),
+    )
+  );
+}

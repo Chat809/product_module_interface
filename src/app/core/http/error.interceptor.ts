@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, throwError } from 'rxjs';
+import { Notificacao } from '../feedback/notificacao.service';
 
 /** Corpo de erro da API no formato RFC 9457 (Problem Details). */
 export interface ProblemDetail {
@@ -12,11 +12,11 @@ export interface ProblemDetail {
 }
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-  const snackBar = inject(MatSnackBar);
+  const notificacao = inject(Notificacao);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      snackBar.open(mensagemDeErro(error), 'Fechar', { duration: 5000 });
+      notificacao.erro(mensagemDeErro(error));
       return throwError(() => error);
     }),
   );
