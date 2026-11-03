@@ -1,52 +1,64 @@
 <header class="cabecalho">
-  <a mat-icon-button routerLink="/produtos" aria-label="Voltar para a lista">
-    <mat-icon>arrow_back</mat-icon>
-  </a>
-  <h1>{{ editando() ? 'Editar produto' : 'Novo produto' }}</h1>
+  <h2 mat-dialog-title>{{ editando ? 'Editar produto' : 'Novo produto' }}</h2>
+  <button mat-icon-button type="button" aria-label="Fechar" (click)="fechar()">
+    <mat-icon>close</mat-icon>
+  </button>
 </header>
 
-@if (carregando()) {
-  <app-loading />
-} @else {
-  <mat-card appearance="outlined">
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="salvar()" class="formulario" novalidate autocomplete="off">
-        <mat-form-field appearance="outline">
-          <mat-label>Nome</mat-label>
-          <input matInput formControlName="nome" maxlength="120" />
-          <mat-hint align="end">{{ form.controls.nome.value.length }}/120</mat-hint>
-          <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
-        </mat-form-field>
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
+  <mat-dialog-content class="formulario">
+    <mat-form-field appearance="outline">
+      <mat-label>Nome</mat-label>
+      <input matInput formControlName="nome" maxlength="120" cdkFocusInitial />
+      <mat-hint align="end">{{ form.controls.nome.value.length }}/120</mat-hint>
+      <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
+    </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Descrição (opcional)</mat-label>
-          <textarea matInput formControlName="descricao" rows="4" maxlength="500"></textarea>
-          <mat-hint align="end">{{ form.controls.descricao.value.length }}/500</mat-hint>
-          <mat-error>{{ mensagemDeErro('descricao') }}</mat-error>
-        </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Descrição (opcional)</mat-label>
+      <textarea matInput formControlName="descricao" rows="3" maxlength="500"></textarea>
+      <mat-hint align="end">{{ form.controls.descricao.value.length }}/500</mat-hint>
+      <mat-error>{{ mensagemDeErro('descricao') }}</mat-error>
+    </mat-form-field>
 
-        <div class="linha">
-          <mat-form-field appearance="outline">
-            <mat-label>Preço</mat-label>
-            <span matTextPrefix>R$&nbsp;</span>
-            <input matInput type="number" formControlName="preco" appSomenteNumeros decimal min="0.01" step="0.01" />
-            <mat-error>{{ mensagemDeErro('preco') }}</mat-error>
-          </mat-form-field>
+    <div class="linha">
+      <mat-form-field appearance="outline">
+        <mat-label>Preço</mat-label>
+        <span matTextPrefix>R$&nbsp;</span>
+        <input
+          matInput
+          type="number"
+          formControlName="preco"
+          appSomenteNumeros
+          decimal
+          min="0.01"
+          step="0.01"
+        />
+        <mat-error>{{ mensagemDeErro('preco') }}</mat-error>
+      </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Quantidade em estoque</mat-label>
-            <input matInput type="number" formControlName="quantidadeEmEstoque" appSomenteNumeros min="0" step="1" />
-            <mat-error>{{ mensagemDeErro('quantidadeEmEstoque') }}</mat-error>
-          </mat-form-field>
-        </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Quantidade em estoque</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="quantidadeEmEstoque"
+          appSomenteNumeros
+          min="0"
+          step="1"
+        />
+        @if (editando) {
+          <mat-hint>Alterar aqui gera um ajuste no histórico</mat-hint>
+        }
+        <mat-error>{{ mensagemDeErro('quantidadeEmEstoque') }}</mat-error>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
 
-        <div class="acoes">
-          <a mat-button routerLink="/produtos">Cancelar</a>
-          <button mat-flat-button type="submit" [disabled]="salvando()">
-            {{ salvando() ? 'Salvando...' : 'Salvar' }}
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-}
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="fechar()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -1,48 +1,65 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { NEVER, of, throwError } from 'rxjs';
+import { Notificacao } from '../../core/feedback/notificacao.service';
 import { Produto } from '../produto.model';
 import { ProdutoService } from '../produto.service';
-import { ProdutoForm } from './produto-form';
+import { ProdutoStore } from '../produto.store';
+import { ProdutoFormData, ProdutoFormDialog } from './produto-form';
 
-describe('ProdutoForm', () => {
+describe('ProdutoFormDialog', () => {
   const produto: Produto = {
-    id: 1,
+    id: '3f1c2b4e-8a6d-4e2f-9b1a-0c5d7e8f9a10',
     nome: 'Teclado',
     descricao: 'Mecânico',
     preco: 349.9,
     quantidadeEmEstoque: 25,
+    criadoEm: '2026-11-01T10:00:00Z',
+    atualizadoEm: '2026-11-01T10:00:00Z',
+    versao: 2,
   };
 
-  let fixture: ComponentFixture<ProdutoForm>;
-  let component: ProdutoForm;
-  let produtoService: {
-    buscarPorId: ReturnType<typeof vi.fn>;
-    criar: ReturnType<typeof vi.fn>;
-    atualizar: ReturnType<typeof vi.fn>;
+  let fixture: ComponentFixture<ProdutoFormDialog>;
+  let component: ProdutoFormDialog;
+  let produtoService: { criar: ReturnType<typeof vi.fn>; atualizar: ReturnType<typeof vi.fn> };
+  let store: {
+    adicionar: ReturnType<typeof vi.fn>;
+    substituir: ReturnType<typeof vi.fn>;
+    carregar: ReturnType<typeof vi.fn>;
   };
-  let router: Router;
+  let dialogRef: { close: ReturnType<typeof vi.fn>; disableClose: boolean } & Record<string, unknown>;
 
-  beforeEach(() => {
-    produtoService = { buscarPorId: vi.fn(), criar: vi.fn(), atualizar: vi.fn() };
+  function criar(data: ProdutoFormData | null): void {
+    produtoService = { criar: vi.fn(), atualizar: vi.fn() };
+    store = { adicionar: vi.fn(), substituir: vi.fn(), carregar: vi.fn() };
+    dialogRef = {
+      close: vi.fn(),
+      disableClose: false,
+      backdropClick: () => NEVER,
+      keydownEvents: () => NEVER,
+    };
 
     TestBed.configureTestingModule({
-      imports: [ProdutoForm],
-      providers: [provideRouter([]), { provide: ProdutoService, useValue: produtoService }],
+      imports: [ProdutoFormDialog],
+      providers: [
+        { provide: ProdutoService, useValue: produtoService },
+        { provide: ProdutoStore, useValue: store },
+        { provide: Notificacao, useValue: { sucesso: vi.fn() } },
+        { provide: MatDialogRef, useValue: dialogRef },
+        { provide: MAT_DIALOG_DATA, useValue: data },
+      ],
     });
-
-    router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    fixture = TestBed.createComponent(ProdutoForm);
+    fixture = TestBed.createComponent(ProdutoFormDialog);
     component = fixture.componentInstance;
-  });
+  }
 
-  function preencher(valores: Partial<Record<keyof Omit<Produto, 'id'>, unknown>>): void {
+  function preencher(valores: Record<string, unknown>): void {
     component['form'].patchValue(valores as never);
   }
 
   it('não deve enviar o formulário quando houver campos inválidos', async () => {
+    criar(null);
     await fixture.whenStable();
 
     component['salvar']();
@@ -56,6 +73,7 @@ describe('ProdutoForm', () => {
   });
 
   it('deve aplicar as mesmas regras de validação da API', async () => {
+    criar(null);
     await fixture.whenStable();
 
     preencher({ nome: '   ', preco: 0, quantidadeEmEstoque: -1 });
@@ -72,7 +90,8 @@ describe('ProdutoForm', () => {
     expect(component['mensagemDeErro']('quantidadeEmEstoque')).toBe('Informe um número inteiro');
   });
 
-  it('deve criar o produto e voltar para a lista', async () => {
+  it('deve cadastrar o produto, incluí-lo no catálogo e fechar o diálogo', async () => {
+    criar(null);
     produtoService.criar.mockReturnValue(of(produto));
     await fixture.whenStable();
 
@@ -85,16 +104,16 @@ describe('ProdutoForm', () => {
       preco: 349.9,
       quantidadeEmEstoque: 25,
     });
-    expect(router.navigate).toHaveBeenCalledWith(['/produtos']);
+    expect(store.adicionar).toHaveBeenCalledWith(produto);
+    expect(dialogRef.close).toHaveBeenCalledWith(produto);
   });
 
-  it('deve carregar o produto e atualizá-lo no modo edição', async () => {
-    produtoService.buscarPorId.mockReturnValue(of(produto));
-    produtoService.atualizar.mockReturnValue(of(produto));
-    fixture.componentRef.setInput('id', '1');
+  it('deve preencher o formulário e enviar a versão ao editar', async () => {
+    criar({ produto });
+    const atualizado = { ...produto, quantidadeEmEstoque: 30, versao: 3 };
+    produtoService.atualizar.mockReturnValue(of(atualizado));
     await fixture.whenStable();
 
-    expect(produtoService.buscarPorId).toHaveBeenCalledWith(1);
     expect(component['form'].getRawValue()).toEqual({
       nome: 'Teclado',
       descricao: 'Mecânico',
@@ -105,16 +124,32 @@ describe('ProdutoForm', () => {
     preencher({ quantidadeEmEstoque: 30 });
     component['salvar']();
 
-    expect(produtoService.atualizar).toHaveBeenCalledWith(1, {
+    expect(produtoService.atualizar).toHaveBeenCalledWith(produto.id, {
       nome: 'Teclado',
       descricao: 'Mecânico',
       preco: 349.9,
       quantidadeEmEstoque: 30,
+      versao: 2,
     });
-    expect(router.navigate).toHaveBeenCalledWith(['/produtos']);
+    expect(store.substituir).toHaveBeenCalledWith(atualizado);
+    expect(dialogRef.close).toHaveBeenCalledWith(atualizado);
+  });
+
+  it('deve recarregar o catálogo e fechar quando houver conflito de versão', async () => {
+    criar({ produto });
+    produtoService.atualizar.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409 })),
+    );
+    await fixture.whenStable();
+
+    component['salvar']();
+
+    expect(store.carregar).toHaveBeenCalledWith(true);
+    expect(dialogRef.close).toHaveBeenCalled();
   });
 
   it('deve exibir no campo correspondente os erros de validação retornados pela API', async () => {
+    criar(null);
     const erroDaApi = new HttpErrorResponse({
       status: 400,
       error: {
@@ -129,6 +164,6 @@ describe('ProdutoForm', () => {
     component['salvar']();
 
     expect(component['mensagemDeErro']('nome')).toBe('Nome rejeitado pela API');
-    expect(router.navigate).not.toHaveBeenCalled();
+    expect(dialogRef.close).not.toHaveBeenCalled();
   });
 });
