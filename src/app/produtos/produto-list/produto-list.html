@@ -1,74 +1,144 @@
 <header class="cabecalho">
   <div>
     <h1>Produtos</h1>
-    <p class="subtitulo">Cadastre, edite e exclua os produtos do catálogo.</p>
+    <p class="subtitulo">Busque, filtre e gerencie o catálogo e o estoque.</p>
   </div>
-  <a mat-flat-button routerLink="/produtos/novo">
+  <button mat-flat-button (click)="novo()">
     <mat-icon>add</mat-icon>
     Novo produto
-  </a>
+  </button>
 </header>
 
-@if (carregando()) {
-  <app-loading />
-} @else if (erroAoCarregar()) {
+<section class="filtros">
+  <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
+    <mat-icon matPrefix>search</mat-icon>
+    <mat-label>Buscar por nome ou descrição</mat-label>
+    <input matInput #campoBusca [value]="busca()" (input)="buscar(campoBusca.value)" />
+    @if (busca()) {
+      <button matSuffix mat-icon-button aria-label="Limpar busca" (click)="buscar('')">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="ordem" subscriptSizing="dynamic">
+    <mat-icon matPrefix>sort</mat-icon>
+    <mat-label>Ordenar por</mat-label>
+    <mat-select
+      [value]="ordenacao()"
+      [compareWith]="mesmaOrdenacao"
+      (selectionChange)="ordenarPor($event.value)"
+    >
+      @for (opcao of opcoesDeOrdenacao; track opcao.rotulo) {
+        <mat-option [value]="opcao.valor">{{ opcao.rotulo }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</section>
+
+<mat-chip-listbox
+  class="situacoes"
+  aria-label="Filtrar por situação do estoque"
+  [value]="situacao()"
+  (change)="filtrarPorSituacao($event.value)"
+>
+  @for (opcao of filtrosSituacao; track opcao) {
+    <mat-chip-option [value]="opcao" [selectable]="situacao() !== opcao">
+      {{ rotuloDoFiltro(opcao) }}
+      <span class="contagem">{{ contagens()[opcao] }}</span>
+    </mat-chip-option>
+  }
+</mat-chip-listbox>
+
+@if (store.carregando() && store.produtos().length === 0) {
+  <app-skeleton [linhas]="6" />
+} @else if (store.erro() && store.produtos().length === 0) {
   <div class="estado">
     <mat-icon>cloud_off</mat-icon>
     <p>Não foi possível carregar os produtos.</p>
-    <button mat-stroked-button (click)="carregar()">Tentar novamente</button>
+    <button mat-stroked-button (click)="store.carregar(true)">Tentar novamente</button>
   </div>
-} @else if (produtos().length === 0) {
+} @else if (store.produtos().length === 0) {
   <div class="estado">
     <mat-icon>inventory_2</mat-icon>
     <p>Nenhum produto cadastrado ainda.</p>
-    <a mat-flat-button routerLink="/produtos/novo">Cadastrar o primeiro produto</a>
+    <button mat-flat-button (click)="novo()">Cadastrar o primeiro produto</button>
+  </div>
+} @else if (resultado().length === 0) {
+  <div class="estado">
+    <mat-icon>search_off</mat-icon>
+    <p>
+      Nenhum produto encontrado
+      @if (busca()) {
+        para "<strong>{{ busca() }}</strong>"
+      }
+      @if (situacao() !== 'todos') {
+        com a situação "{{ rotuloDoFiltro(situacao()) }}"
+      }.
+    </p>
+    <button mat-stroked-button (click)="limparFiltros()">Limpar filtros</button>
   </div>
 } @else {
-  <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
-    <mat-label>Buscar por nome ou descrição</mat-label>
-    <mat-icon matPrefix>search</mat-icon>
-    <input matInput [value]="filtro()" (input)="filtrar($event)" />
-  </mat-form-field>
-
   <div class="tabela">
-    <table mat-table [dataSource]="produtosVisiveis()" matSort (matSortChange)="ordenar($event)">
+    <table
+      mat-table
+      [dataSource]="paginaAtual()"
+      matSort
+      [matSortActive]="ordenacao().coluna"
+      [matSortDirection]="ordenacao().direcao"
+      matSortDisableClear
+      (matSortChange)="ordenarPeloCabecalho($event)"
+    >
       <ng-container matColumnDef="nome">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
-        <td mat-cell *matCellDef="let produto">{{ produto.nome }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="descricao">
-        <th mat-header-cell *matHeaderCellDef>Descrição</th>
-        <td mat-cell *matCellDef="let produto" class="descricao">{{ produto.descricao || '—' }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+        <td mat-cell *matCellDef="let produto">
+          <span class="nome">
+            @for (trecho of produto.nome | destaque: termos(); track $index) {
+              @if (trecho.destaque) {<mark class="destaque">{{ trecho.texto }}</mark>} @else {{{ trecho.texto }}}
+            }
+          </span>
+          @if (produto.descricao) {
+            <span class="descricao">
+              @for (trecho of produto.descricao | destaque: termos(); track $index) {
+                @if (trecho.destaque) {<mark class="destaque">{{ trecho.texto }}</mark>} @else {{{ trecho.texto }}}
+              }
+            </span>
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="preco">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Preço</th>
-        <td mat-cell *matCellDef="let produto">{{ produto.preco | currency }}</td>
+        <td mat-cell *matCellDef="let produto" class="numero">{{ produto.preco | currency }}</td>
       </ng-container>
 
       <ng-container matColumnDef="quantidadeEmEstoque">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Estoque</th>
-        <td mat-cell *matCellDef="let produto">{{ produto.quantidadeEmEstoque }}</td>
+        <td mat-cell *matCellDef="let produto">
+          <span class="selo-estoque" [class]="situacaoDe(produto)">
+            {{ produto.quantidadeEmEstoque }} · {{ rotulosSituacao[situacaoDe(produto)] }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="atualizadoEm">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Atualizado em</th>
+        <td mat-cell *matCellDef="let produto" class="data">{{ produto.atualizadoEm | date: 'short' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="acoes">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let produto" class="acoes">
-          <a
-            mat-icon-button
-            [routerLink]="['/produtos', produto.id, 'editar']"
-            matTooltip="Editar"
-            [attr.aria-label]="'Editar ' + produto.nome"
-          >
+          <button mat-icon-button (click)="movimentar(produto)" matTooltip="Movimentar estoque"
+            [attr.aria-label]="'Movimentar estoque de ' + produto.nome">
+            <mat-icon>swap_vert</mat-icon>
+          </button>
+          <button mat-icon-button (click)="editar(produto)" matTooltip="Editar"
+            [attr.aria-label]="'Editar ' + produto.nome">
             <mat-icon>edit</mat-icon>
-          </a>
-          <button
-            mat-icon-button
-            (click)="confirmarExclusao(produto)"
-            matTooltip="Excluir"
-            [attr.aria-label]="'Excluir ' + produto.nome"
-          >
+          </button>
+          <button mat-icon-button (click)="confirmarExclusao(produto)" matTooltip="Excluir"
+            [attr.aria-label]="'Excluir ' + produto.nome">
             <mat-icon>delete</mat-icon>
           </button>
         </td>
@@ -76,13 +146,15 @@
 
       <tr mat-header-row *matHeaderRowDef="colunas"></tr>
       <tr mat-row *matRowDef="let row; columns: colunas"></tr>
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell sem-resultado" [attr.colspan]="colunas.length">
-          Nenhum produto encontrado para "{{ filtro() }}".
-        </td>
-      </tr>
     </table>
-  </div>
 
-  <p class="total">{{ produtosVisiveis().length }} de {{ produtos().length }} produto(s)</p>
+    <mat-paginator
+      [length]="resultado().length"
+      [pageIndex]="pagina()"
+      [pageSize]="tamanhoPagina()"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="mudarPagina($event)"
+      aria-label="Paginação dos produtos"
+    />
+  </div>
 }
