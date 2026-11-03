@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { TimeoutError, of, throwError } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { Login } from './login';
@@ -9,13 +9,13 @@ import { Login } from './login';
 describe('Login', () => {
   let fixture: ComponentFixture<Login>;
   let component: Login;
-  let auth: { entrar: ReturnType<typeof vi.fn> };
-  let notificacao: { sucesso: ReturnType<typeof vi.fn> };
+  let auth: { entrar: ReturnType<typeof vi.fn>; acordarApi: ReturnType<typeof vi.fn> };
+  let notificacao: { sucesso: ReturnType<typeof vi.fn>; erro: ReturnType<typeof vi.fn> };
   let navegar: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
-    auth = { entrar: vi.fn(() => of({ nome: 'Maria Souza' })) };
-    notificacao = { sucesso: vi.fn() };
+    auth = { entrar: vi.fn(() => of({ nome: 'Maria Souza' })), acordarApi: vi.fn() };
+    notificacao = { sucesso: vi.fn(), erro: vi.fn() };
     TestBed.configureTestingModule({
       imports: [Login],
       providers: [
@@ -64,6 +64,21 @@ describe('Login', () => {
 
     expect(component['form'].controls.senha.value).toBe('');
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('deve acordar a API ao abrir a tela', () => {
+    expect(auth.acordarApi).toHaveBeenCalled();
+  });
+
+  it('deve encerrar o carregamento e avisar quando a API não responder a tempo', () => {
+    auth.entrar.mockReturnValue(throwError(() => new TimeoutError()));
+    preencher('maria@exemplo.com', 'segredo1');
+    component['entrar']();
+
+    expect(notificacao.erro).toHaveBeenCalledWith(
+      'A API demorou demais para responder. Tente novamente em instantes.',
+    );
+    expect(component['enviando']()).toBe(false);
   });
 
   it('deve ter link para criar conta', () => {

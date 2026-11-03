@@ -8,10 +8,13 @@ import { routes } from './app.routes';
 describe('App (rotas)', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response())));
     TestBed.configureTestingModule({
       providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
     });
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it('sem sessão deve abrir o login, guardando a rota pedida', async () => {
     const harness = await RouterTestingHarness.create();

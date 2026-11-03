@@ -25,10 +25,24 @@ export class AuthService {
 
   private readonly sessao = signal<Sessao | null>(lerSessaoGuardada());
   private renovacaoEmAndamento: Observable<Sessao> | null = null;
+  private apiAcordada = false;
 
   readonly usuario = computed(() => this.sessao()?.usuario ?? null);
   readonly logado = computed(() => this.sessao() !== null);
   readonly ehAdmin = computed(() => this.usuario()?.papel === 'ADMIN');
+
+  /**
+   * Dispara o despertar da API enquanto o usuário preenche o formulário. O modo `no-cors`
+   * dispensa CORS no health check; a resposta opaca não importa, só a chegada da requisição.
+   */
+  acordarApi(): void {
+    if (this.apiAcordada) {
+      return;
+    }
+    this.apiAcordada = true;
+    const health = environment.apiUrl.replace(/\/api\/v1$/, '/actuator/health');
+    fetch(health, { mode: 'no-cors', cache: 'no-store' }).catch(() => (this.apiAcordada = false));
+  }
 
   token(): string | null {
     return this.sessao()?.accessToken ?? null;

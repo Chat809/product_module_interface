@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { TimeoutError, of, throwError } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { Registro } from './registro';
@@ -9,17 +9,19 @@ import { Registro } from './registro';
 describe('Registro', () => {
   let fixture: ComponentFixture<Registro>;
   let component: Registro;
-  let auth: { registrar: ReturnType<typeof vi.fn> };
+  let auth: { registrar: ReturnType<typeof vi.fn>; acordarApi: ReturnType<typeof vi.fn> };
+  let notificacao: { sucesso: ReturnType<typeof vi.fn>; erro: ReturnType<typeof vi.fn> };
   let navegar: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
-    auth = { registrar: vi.fn(() => of({ nome: 'Maria Souza' })) };
+    auth = { registrar: vi.fn(() => of({ nome: 'Maria Souza' })), acordarApi: vi.fn() };
+    notificacao = { sucesso: vi.fn(), erro: vi.fn() };
     TestBed.configureTestingModule({
       imports: [Registro],
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: auth },
-        { provide: Notificacao, useValue: { sucesso: vi.fn() } },
+        { provide: Notificacao, useValue: notificacao },
       ],
     });
     fixture = TestBed.createComponent(Registro);
@@ -70,8 +72,36 @@ describe('Registro', () => {
     preencher({});
     component['registrar']();
 
-    expect(component['mensagemDeErro']('email')).toBe('Já existe uma conta com este e-mail');
+    expect(component['mensagemDeErro']('email')).toBe(
+      'Já existe uma conta com este e-mail. Entre com ela ou use outro e-mail.',
+    );
     expect(navegar).not.toHaveBeenCalled();
+    expect(component['enviando']()).toBe(false);
+  });
+
+  it('deve liberar o e-mail duplicado assim que ele for alterado', () => {
+    auth.registrar.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+    preencher({});
+    component['registrar']();
+
+    component['form'].controls.email.setValue('outro@exemplo.com');
+
+    expect(component['form'].controls.email.valid).toBe(true);
+  });
+
+  it('deve acordar a API ao abrir a tela', () => {
+    expect(auth.acordarApi).toHaveBeenCalled();
+  });
+
+  it('deve encerrar o carregamento e avisar quando a API não responder a tempo', () => {
+    auth.registrar.mockReturnValue(throwError(() => new TimeoutError()));
+    preencher({});
+    component['registrar']();
+
+    expect(notificacao.erro).toHaveBeenCalledWith(
+      'A API demorou demais para responder. Tente novamente em instantes.',
+    );
+    expect(component['enviando']()).toBe(false);
   });
 
   it('deve exibir os erros por campo devolvidos pela API', () => {

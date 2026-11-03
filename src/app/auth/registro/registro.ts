@@ -14,10 +14,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { TimeoutError, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
+import { acompanharEspera } from '../../core/http/espera';
 import { Tema } from '../../core/tema/tema.service';
 
 type Campo = 'nome' | 'email' | 'senha' | 'confirmacao';
@@ -68,6 +69,7 @@ export class Registro {
   protected readonly tema = inject(Tema);
 
   protected readonly enviando = signal(false);
+  protected readonly demorando = signal(false);
   protected readonly senhaVisivel = signal(false);
 
   protected readonly form = this.fb.group({
@@ -78,6 +80,7 @@ export class Registro {
   });
 
   constructor() {
+    this.auth.acordarApi();
     this.form.controls.senha.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.form.controls.confirmacao.updateValueAndValidity());
@@ -93,6 +96,7 @@ export class Registro {
     this.auth
       .registrar(nome.trim(), email.trim(), senha)
       .pipe(
+        acompanharEspera(this.demorando),
         finalize(() => this.enviando.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -101,9 +105,15 @@ export class Registro {
           this.notificacao.sucesso(`Conta criada. Bem-vindo, ${usuario.nome.split(' ')[0]}!`);
           this.router.navigateByUrl('/dashboard');
         },
-        error: (erro: HttpErrorResponse) => {
+        error: (erro: HttpErrorResponse | TimeoutError) => {
+          if (erro instanceof TimeoutError) {
+            this.notificacao.erro('A API demorou demais para responder. Tente novamente em instantes.');
+            return;
+          }
           if (erro.status === 409) {
-            this.form.controls.email.setErrors({ api: 'Já existe uma conta com este e-mail' });
+            this.form.controls.email.setErrors({
+              api: 'Já existe uma conta com este e-mail. Entre com ela ou use outro e-mail.',
+            });
           }
           (erro.error as ProblemDetail | null)?.erros?.forEach(({ campo, mensagem }) =>
             this.form.get(campo)?.setErrors({ api: mensagem }),

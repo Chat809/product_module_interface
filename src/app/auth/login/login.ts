@@ -8,10 +8,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { TimeoutError, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
+import { acompanharEspera } from '../../core/http/espera';
 import { Tema } from '../../core/tema/tema.service';
 
 @Component({
@@ -39,12 +40,17 @@ export class Login {
   readonly voltar = input<string>();
 
   protected readonly enviando = signal(false);
+  protected readonly demorando = signal(false);
   protected readonly senhaVisivel = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: ['', [Validators.required, Validators.email]],
     senha: ['', Validators.required],
   });
+
+  constructor() {
+    this.auth.acordarApi();
+  }
 
   protected entrar(): void {
     if (this.form.invalid) {
@@ -56,6 +62,7 @@ export class Login {
     this.auth
       .entrar(email, senha)
       .pipe(
+        acompanharEspera(this.demorando),
         finalize(() => this.enviando.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -64,7 +71,11 @@ export class Login {
           this.notificacao.sucesso(`Olá, ${usuario.nome.split(' ')[0]}!`);
           this.router.navigateByUrl(this.voltar() || '/dashboard');
         },
-        error: (erro: HttpErrorResponse) => {
+        error: (erro: HttpErrorResponse | TimeoutError) => {
+          if (erro instanceof TimeoutError) {
+            this.notificacao.erro('A API demorou demais para responder. Tente novamente em instantes.');
+            return;
+          }
           (erro.error as ProblemDetail | null)?.erros?.forEach(({ campo, mensagem }) =>
             this.form.get(campo)?.setErrors({ api: mensagem }),
           );

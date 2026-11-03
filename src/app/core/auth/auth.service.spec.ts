@@ -90,6 +90,22 @@ describe('AuthService', () => {
     expect(auth.token()).toBe('novo');
   });
 
+  it('deve acordar a API uma única vez, sem passar pelos interceptors', () => {
+    const fetch = vi.fn(() => Promise.resolve(new Response()));
+    vi.stubGlobal('fetch', fetch);
+    const auth = criar();
+
+    auth.acordarApi();
+    auth.acordarApi();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(`${new URL(environment.apiUrl).origin}/actuator/health`, {
+      mode: 'no-cors',
+      cache: 'no-store',
+    });
+    vi.unstubAllGlobals();
+  });
+
   it('deve sair limpando a sessão e voltar ao login', () => {
     localStorage.setItem('painel.sessao', JSON.stringify(sessaoDeTeste()));
     const auth = criar();

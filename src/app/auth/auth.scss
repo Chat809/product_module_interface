@@ -56,6 +56,22 @@ mat-form-field {
   margin-top: 8px;
 }
 
+.aviso-demora {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+
+  mat-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
 .alternar {
   margin: 24px 0 0;
   text-align: center;
