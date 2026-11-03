@@ -5,5 +5,6 @@ import { Shell } from './core/layout/shell';
   selector: 'app-root',
   imports: [Shell],
   template: '<app-shell />',
+  styles: ':host { display: block; height: 100%; }',
 })
 export class App {}
