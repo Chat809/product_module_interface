@@ -3,22 +3,49 @@
 [![CI](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml/badge.svg)](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml)
 ![Angular](https://img.shields.io/badge/Angular-22-dd0031)
 ![Angular Material](https://img.shields.io/badge/Angular%20Material-22-3f51b5)
-![Testes](https://img.shields.io/badge/testes-26%20passando-success)
+![Testes](https://img.shields.io/badge/testes-54%20passando-success)
 
 Painel administrativo em Angular para gerenciar produtos e estoque. Consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot), publicada no Render.
+
+![Dashboard do painel](docs/dashboard.png)
+
+## Links rápidos
+
+| O quê | Link |
+|---|---|
+| Painel publicado (Vercel) | https://productmoduleinterface.vercel.app |
+| API usada pelo painel (Render) | https://product-module-api.onrender.com/api/v1/produtos |
+| Swagger UI da API (testar os endpoints no navegador) | https://product-module-api.onrender.com/swagger-ui.html |
+| Health check da API | https://product-module-api.onrender.com/actuator/health |
+| Repositório da API | https://github.com/Chat809/product_module_api |
+| Execuções do CI | https://github.com/Chat809/product_module_interface/actions |
+
+> A API roda no plano gratuito do Render: depois de um tempo sem uso, a primeira carga do painel pode levar até um minuto. O painel mostra um aviso enquanto isso.
+
+## Telas
+
+| Lista com busca instantânea e destaque | Modo escuro |
+|---|---|
+| ![Lista de produtos filtrada pela busca "cadeira", com o termo destacado](docs/lista-busca.png) | ![Lista de produtos no modo escuro](docs/lista-escuro.png) |
+
+| Edição em modal | Movimentação de estoque com saldo previsto e histórico |
+|---|---|
+| ![Modal de edição de produto](docs/modal-edicao.png) | ![Modal de movimentação de estoque](docs/modal-movimentacao.png) |
+
+![Dashboard no modo escuro](docs/dashboard-escuro.png)
 
 ## Funcionalidades
 
 - **Dashboard:** indicadores do estoque (produtos, itens, valor total em reais, esgotados e estoque baixo) e a lista "Precisa repor", com atalho para registrar entrada.
 - **Busca instantânea:** filtra enquanto você digita, ignora acentos e maiúsculas, aceita vários termos em qualquer ordem e destaca o trecho encontrado. Não faz requisição a cada tecla.
-- **Filtros e ordenação:** chips por situação do estoque (todos, disponível, estoque baixo, esgotado) com contagem, ordenação por nome, preço, estoque ou última atualização, e paginação.
+- **Filtros e ordenação:** chips por situação do estoque (todos, em estoque, estoque baixo, esgotado) com contagem, ordenação por nome, preço, estoque ou última atualização, e paginação em português.
 - **Cadastro e edição em modal**, no mesmo formulário, com as mesmas regras de validação da API e erros exibidos no campo correspondente. Fechar com alterações pendentes pede confirmação.
 - **Movimentações de estoque:** modal de entrada e saída com saldo previsto, aviso de estoque insuficiente e histórico das últimas movimentações.
-- **Edição concorrente:** se outra pessoa alterou o produto, a API responde 409; o painel avisa e recarrega os dados.
+- **Edição concorrente:** ao salvar, o painel envia a versão lida no cabeçalho `If-Match`. Se outra pessoa alterou o produto, a API responde 409; o painel avisa e recarrega os dados.
 - **Avisos padronizados:** toasts com emoji por tipo (sucesso, erro, aviso, informação) e botão X para fechar.
 - **Modo escuro**, com a preferência salva no navegador (o padrão segue o sistema operacional).
-- **Layout responsivo** com menu lateral, que vira menu recolhível no celular.
-- Skeleton durante o carregamento, estados vazios e aviso de espera enquanto a API "acorda" no plano gratuito do Render.
+- **Layout responsivo** com menu lateral, que vira menu recolhível no celular; modais que se ajustam à altura da janela.
+- Skeleton durante o carregamento, estados vazios e aviso de espera enquanto a API "acorda".
 
 ## Stack
 
@@ -43,7 +70,7 @@ npm start
 
 Acesse `http://localhost:4200`.
 
-Em desenvolvimento, o painel consome a API local em `http://localhost:8080/api/v1`. Para subi-la, siga o README da [Produtos API](https://github.com/Chat809/product_module_api) (`./mvnw spring-boot:run`). A API sobe com 15 produtos de exemplo.
+Em desenvolvimento, o painel consome a API local em `http://localhost:8080/api/v1`. Para subi-la, siga o README da [Produtos API](https://github.com/Chat809/product_module_api#como-executar) (`./mvnw spring-boot:run`). A API sobe com 15 produtos de exemplo.
 
 Para usar a API publicada no Render sem rodar o backend localmente:
 
@@ -62,12 +89,20 @@ npm start -- --configuration production
 npm test
 ```
 
+São 54 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por objetos falsos (`vi.fn()`) ou intercepta o HTTP com `HttpTestingController`, e verifica o que aparece na tela e quais chamadas foram feitas.
+
 | Arquivo | O que cobre |
 |---|---|
-| `produto.service.spec.ts` | URLs, parâmetros, métodos HTTP e corpo de cada operação da API |
+| `produto.service.spec.ts` | URLs, parâmetros, métodos HTTP, corpo e cabeçalho `If-Match` de cada operação da API |
 | `produto-filtro.spec.ts` | Normalização sem acentos, filtro por termos e situação, ordenação e destaque |
 | `produto.store.spec.ts` | Carga única do catálogo e atualização local após cada operação |
+| `produto-list.spec.ts` | Busca sem nova chamada à API, chips com contagem, ordenação, paginação, estado vazio e exclusão |
 | `produto-form.spec.ts` | Validações, cadastro, edição com versão, conflito 409 e erros retornados pela API |
+| `movimentacao-dialog.spec.ts` | Histórico, saldo previsto, bloqueio de saída maior que o estoque e registro |
+| `dashboard.spec.ts` | Indicadores do resumo, lista de reposição ordenada e atalho de entrada |
+| `error.interceptor.spec.ts` | Mensagem exibida para cada status (sem conexão, 400, 409, 422 e erro genérico) |
+| `tema.service.spec.ts` | Preferência do sistema, escolha salva e troca de tema |
+| `paginador-intl.spec.ts` | Rótulos da paginação em português |
 | `toast.spec.ts` | Emoji por tipo, papel de acessibilidade e fechamento pelo botão X |
 | `app.spec.ts` | Renderização do layout |
 
@@ -85,11 +120,12 @@ Os arquivos são gerados em `dist/product-module-interface/browser`.
 
 ```
 src/app
-├── app.config.ts             Providers: rotas, HttpClient com interceptor, locale pt-BR e moeda BRL
+├── app.config.ts             Providers: rotas, HttpClient com interceptor, locale pt-BR, moeda BRL e paginação em português
 ├── app.routes.ts             Rotas com lazy loading
 ├── core
 │   ├── feedback              Toast padronizado e serviço de notificação
 │   ├── http                  Interceptor que traduz os erros da API (RFC 9457) em avisos
+│   ├── i18n                  Textos do paginador em português
 │   ├── layout                Shell: barra superior, menu lateral e área de conteúdo
 │   └── tema                  Modo claro/escuro
 ├── shared
@@ -120,6 +156,7 @@ src/app
 - **Store com signals:** um serviço com `signal` e `computed` guarda o catálogo e o atualiza localmente após cadastrar, editar, movimentar ou excluir. Para este escopo, uma biblioteca de estado (como NgRx) seria complexidade sem ganho.
 - **Modais em vez de páginas:** cadastrar, editar e movimentar acontecem sem sair da lista, preservando busca, filtros e página.
 - **Tratamento de erros centralizado:** o interceptor exibe a mensagem de qualquer erro HTTP; os componentes tratam apenas o que é específico deles, como os erros por campo no formulário.
+- **Concorrência pelo HTTP:** a versão do produto vai no cabeçalho `If-Match`, como recomenda a especificação do HTTP, e também no corpo, por compatibilidade.
 
 ## Deploy na Vercel
 
@@ -129,8 +166,14 @@ src/app
 
 A API libera CORS para `https://productmoduleinterface*.vercel.app` e `https://product-module-interface*.vercel.app`. Se o painel for publicado em outro domínio, adicione-o à variável `CORS_ALLOWED_ORIGINS` do serviço da API no Render.
 
-## Links
+## Referências
 
-- Painel publicado: https://productmoduleinterface.vercel.app
-- API: https://product-module-api.onrender.com/swagger-ui.html
-- Repositório da API: https://github.com/Chat809/product_module_api
+- [Angular](https://angular.dev/) e [Signals](https://angular.dev/guide/signals)
+- [Angular Material](https://material.angular.dev/) e [Material Design 3](https://m3.material.io/)
+- [Reactive Forms](https://angular.dev/guide/forms/reactive-forms)
+- [Testes no Angular](https://angular.dev/guide/testing) e [Vitest](https://vitest.dev/)
+- [HttpClient e interceptors](https://angular.dev/guide/http)
+- [MDN: ETag e If-Match](https://developer.mozilla.org/docs/Web/HTTP/Headers/If-Match)
+- [RFC 9457: Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457)
+- [Vercel: deploy de projetos Angular](https://vercel.com/docs/frameworks/frontend/angular)
+- [GitHub Actions](https://docs.github.com/actions)
