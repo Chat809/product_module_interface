@@ -1,0 +1,127 @@
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 12px 0 0;
+
+  h2 {
+    padding-bottom: 0;
+  }
+}
+
+.produto {
+  margin: 0;
+  padding: 0 24px;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.tipo {
+  width: 100%;
+  margin: 8px 0 16px;
+
+  mat-button-toggle {
+    flex: 1;
+  }
+
+  mat-icon {
+    vertical-align: middle;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 16px;
+}
+
+.saldo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 96px;
+  padding: 8px 12px;
+  border-radius: var(--app-raio);
+  background: var(--mat-sys-surface-container-high);
+  transition: background-color var(--app-transicao), color var(--app-transicao);
+
+  .rotulo {
+    font: var(--mat-sys-label-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  strong {
+    font: var(--mat-sys-title-large);
+  }
+
+  &.invalido {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}
+
+.alerta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 12px;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+}
+
+.motivo {
+  width: 100%;
+}
+
+.historico {
+  margin-top: 4px;
+
+  h3 {
+    margin: 0 0 8px;
+    font: var(--mat-sys-title-small);
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  .detalhes {
+    display: flex;
+    flex-direction: column;
+  }
+
+  small,
+  .saldo-item {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &.entrada mat-icon {
+    color: var(--mat-sys-primary);
+  }
+
+  &.saida mat-icon {
+    color: var(--mat-sys-error);
+  }
+
+  &.ajuste mat-icon {
+    color: var(--mat-sys-tertiary);
+  }
+}
+
+.vazio {
+  color: var(--mat-sys-on-surface-variant);
+}

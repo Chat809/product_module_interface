@@ -1,0 +1,76 @@
+<header class="cabecalho">
+  <div>
+    <h2 mat-dialog-title>Movimentar estoque</h2>
+    <p class="produto">{{ produto.nome }} · {{ produto.quantidadeEmEstoque }} em estoque</p>
+  </div>
+  <button mat-icon-button type="button" aria-label="Fechar" mat-dialog-close>
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="registrar()" novalidate autocomplete="off">
+  <mat-dialog-content>
+    <mat-button-toggle-group formControlName="tipo" class="tipo" aria-label="Tipo de movimentação">
+      <mat-button-toggle value="ENTRADA">
+        <mat-icon>{{ rotulos.ENTRADA.icone }}</mat-icon> Entrada
+      </mat-button-toggle>
+      <mat-button-toggle value="SAIDA">
+        <mat-icon>{{ rotulos.SAIDA.icone }}</mat-icon> Saída
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <div class="linha">
+      <mat-form-field appearance="outline">
+        <mat-label>Quantidade</mat-label>
+        <input matInput type="number" formControlName="quantidade" appSomenteNumeros min="1" step="1" cdkFocusInitial />
+        <mat-error>{{ mensagemQuantidade() }}</mat-error>
+      </mat-form-field>
+
+      <div class="saldo" [class.invalido]="estoqueInsuficiente()" aria-live="polite">
+        <span class="rotulo">Saldo após</span>
+        <strong>{{ saldoPrevisto() }}</strong>
+      </div>
+    </div>
+
+    @if (estoqueInsuficiente()) {
+      <p class="alerta">
+        <mat-icon>error</mat-icon>
+        A saída não pode ser maior que o estoque disponível ({{ produto.quantidadeEmEstoque }}).
+      </p>
+    }
+
+    <mat-form-field appearance="outline" class="motivo">
+      <mat-label>Motivo (opcional)</mat-label>
+      <input matInput formControlName="motivo" maxlength="200" placeholder="Ex.: reposição do fornecedor" />
+    </mat-form-field>
+
+    <section class="historico">
+      <h3>Últimas movimentações</h3>
+      @if (historico(); as itens) {
+        @for (item of itens; track item.id) {
+          <div class="item" [class]="item.tipo.toLowerCase()">
+            <mat-icon>{{ rotulos[item.tipo].icone }}</mat-icon>
+            <div class="detalhes">
+              <span>
+                {{ rotulos[item.tipo].texto }} de {{ item.quantidade }}
+                <span class="saldo-item">· saldo {{ item.saldoAnterior }} → {{ item.saldoApos }}</span>
+              </span>
+              <small>{{ item.criadoEm | date: 'short' }}{{ item.motivo ? ' · ' + item.motivo : '' }}</small>
+            </div>
+          </div>
+        } @empty {
+          <p class="vazio">Nenhuma movimentação registrada.</p>
+        }
+      } @else {
+        <app-loading />
+      }
+    </section>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="salvando() || estoqueInsuficiente()">
+      {{ salvando() ? 'Registrando...' : 'Registrar' }}
+    </button>
+  </mat-dialog-actions>
+</form>
