@@ -20,7 +20,7 @@
     </mat-button-toggle-group>
 
     <div class="linha">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Quantidade</mat-label>
         <input matInput type="number" formControlName="quantidade" appSomenteNumeros min="1" step="1" cdkFocusInitial />
         <mat-error>{{ mensagemQuantidade() }}</mat-error>
@@ -39,7 +39,7 @@
       </p>
     }
 
-    <mat-form-field appearance="outline" class="motivo">
+    <mat-form-field appearance="outline" class="motivo" subscriptSizing="dynamic">
       <mat-label>Motivo (opcional)</mat-label>
       <input matInput formControlName="motivo" maxlength="200" placeholder="Ex.: reposição do fornecedor" />
     </mat-form-field>

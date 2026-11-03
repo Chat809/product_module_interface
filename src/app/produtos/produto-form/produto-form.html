@@ -7,22 +7,22 @@
 
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
   <mat-dialog-content class="formulario">
-    <mat-form-field appearance="outline">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Nome</mat-label>
       <input matInput formControlName="nome" maxlength="120" cdkFocusInitial />
       <mat-hint align="end">{{ form.controls.nome.value.length }}/120</mat-hint>
       <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Descrição (opcional)</mat-label>
-      <textarea matInput formControlName="descricao" rows="3" maxlength="500"></textarea>
+      <textarea matInput formControlName="descricao" rows="2" maxlength="500"></textarea>
       <mat-hint align="end">{{ form.controls.descricao.value.length }}/500</mat-hint>
       <mat-error>{{ mensagemDeErro('descricao') }}</mat-error>
     </mat-form-field>
 
     <div class="linha">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Preço</mat-label>
         <span matTextPrefix>R$&nbsp;</span>
         <input
@@ -37,7 +37,7 @@
         <mat-error>{{ mensagemDeErro('preco') }}</mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Quantidade em estoque</mat-label>
         <input
           matInput
@@ -47,12 +47,16 @@
           min="0"
           step="1"
         />
-        @if (editando) {
-          <mat-hint>Alterar aqui gera um ajuste no histórico</mat-hint>
-        }
         <mat-error>{{ mensagemDeErro('quantidadeEmEstoque') }}</mat-error>
       </mat-form-field>
     </div>
+
+    @if (editando) {
+      <p class="dica">
+        <mat-icon>info</mat-icon>
+        Alterar a quantidade aqui registra um ajuste no histórico de movimentações.
+      </p>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">

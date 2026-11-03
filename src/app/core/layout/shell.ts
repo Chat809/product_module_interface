@@ -99,6 +99,10 @@ interface ItemDeMenu {
       color: var(--mat-sys-on-primary);
     }
 
+    .toolbar .mat-mdc-icon-button {
+      color: inherit;
+    }
+
     .marca {
       display: flex;
       align-items: center;
@@ -121,16 +125,24 @@ interface ItemDeMenu {
       border-right: 1px solid var(--mat-sys-outline-variant);
     }
 
+    .menu ::ng-deep .mat-drawer-inner-container {
+      overflow-x: hidden;
+    }
+
+    .menu mat-nav-list {
+      padding: 0 8px;
+    }
+
     .menu a {
-      margin: 0 8px;
       border-radius: 999px;
       transition: background-color var(--app-transicao);
     }
 
     .conteudo {
+      box-sizing: border-box;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 24px 16px 48px;
+      padding: 24px clamp(16px, 3vw, 32px) 48px;
     }
   `,
 })

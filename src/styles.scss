@@ -148,13 +148,33 @@ input[type='number'] {
   );
 }
 
-// Diálogos
+// Diálogos: mais compactos e acompanhando a altura da janela, sem barra de rolagem visível
 .mat-mdc-dialog-container {
+  @include mat.theme(
+    (
+      density: -1,
+    )
+  );
   @include mat.dialog-overrides(
     (
       container-shape: calc(var(--app-raio) * 2),
     )
   );
+
+  .mat-mdc-dialog-content {
+    max-height: calc(100dvh - 180px);
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+// Barras de rolagem discretas no restante do painel
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mat-sys-outline-variant) transparent;
 }
 
 // Selo de situação do estoque
