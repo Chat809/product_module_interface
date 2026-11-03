@@ -16,6 +16,11 @@ export interface AtualizarUsuario {
   funcao: string | null;
 }
 
+/** Espelha o CriarUsuarioRequestDTO da API. */
+export interface NovoUsuario extends AtualizarUsuario {
+  senha: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
   private readonly http = inject(HttpClient);
@@ -25,8 +30,16 @@ export class UsuarioService {
     return this.http.get<Pagina<Usuario>>(this.url, { params: { page: pagina, size: tamanho } });
   }
 
+  criar(dados: NovoUsuario): Observable<Usuario> {
+    return this.http.post<Usuario>(this.url, dados);
+  }
+
   atualizar(id: string, dados: AtualizarUsuario): Observable<Usuario> {
     return this.http.put<Usuario>(`${this.url}/${id}`, dados);
+  }
+
+  excluir(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}`);
   }
 
   redefinirSenha(id: string, senha: string): Observable<void> {

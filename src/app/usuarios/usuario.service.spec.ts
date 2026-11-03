@@ -40,6 +40,30 @@ describe('UsuarioService', () => {
     req.flush({});
   });
 
+  it('deve criar o usuário com POST, enviando a senha inicial', () => {
+    const dados = {
+      nome: 'Carla',
+      email: 'carla@exemplo.com',
+      senha: 'segredo1',
+      papel: 'USUARIO' as const,
+      acessos: ['dashboard'],
+      departamento: null,
+      funcao: null,
+    };
+    service.criar(dados).subscribe();
+    const req = controle.expectOne(url);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(dados);
+    req.flush({}, { status: 201, statusText: 'Created' });
+  });
+
+  it('deve excluir o usuário com DELETE', () => {
+    service.excluir('u1').subscribe();
+    const req = controle.expectOne(`${url}/u1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
   it('deve redefinir a senha com PUT em /senha', () => {
     service.redefinirSenha('u1', 'novaSenha1').subscribe();
     const req = controle.expectOne(`${url}/u1/senha`);

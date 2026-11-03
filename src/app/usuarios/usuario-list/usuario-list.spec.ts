@@ -5,6 +5,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
+import { ConfirmDialog } from '../../shared/confirm-dialog/confirm-dialog';
 import { SenhaDialog } from '../senha-dialog/senha-dialog';
 import { UsuarioFormDialog } from '../usuario-form/usuario-form';
 import { UsuarioService } from '../usuario.service';
@@ -22,7 +23,7 @@ describe('UsuarioList', () => {
   let fixture: ComponentFixture<UsuarioList>;
   let component: UsuarioList;
   let elemento: HTMLElement;
-  let service: { listar: ReturnType<typeof vi.fn> };
+  let service: { listar: ReturnType<typeof vi.fn>; excluir: ReturnType<typeof vi.fn> };
   let auth: { usuario: ReturnType<typeof signal<Usuario>>; atualizarUsuario: ReturnType<typeof vi.fn> };
   let notificacao: { sucesso: ReturnType<typeof vi.fn> };
   let abrir: ReturnType<typeof vi.fn>;
@@ -34,6 +35,7 @@ describe('UsuarioList', () => {
       listar: vi.fn(() =>
         of({ conteudo: [eu, maria, joao], pagina: 0, tamanho: 10, totalElementos: 3, totalPaginas: 1 }),
       ),
+      excluir: vi.fn(() => of(undefined)),
     };
     auth = { usuario: signal(eu), atualizarUsuario: vi.fn() };
     notificacao = { sucesso: vi.fn() };
@@ -126,6 +128,55 @@ describe('UsuarioList', () => {
 
     expect(abrir).toHaveBeenCalledWith(SenhaDialog, expect.objectContaining({ data: maria }));
     expect(notificacao.sucesso).toHaveBeenCalledWith('Nova senha de Maria definida.');
+  });
+
+  it('deve abrir o diálogo em modo de criação e recarregar a lista com o novo usuário', () => {
+    resultadoDoDialogo = usuario('carla', 'Carla', 'USUARIO', ['dashboard']);
+    component['novo']();
+
+    expect(abrir).toHaveBeenCalledWith(UsuarioFormDialog, expect.objectContaining({ data: { ehVoce: false } }));
+    expect(notificacao.sucesso).toHaveBeenCalledWith('Usuário Carla criado.');
+    expect(service.listar).toHaveBeenCalledTimes(2);
+  });
+
+  it('não deve recarregar quando a criação for cancelada', () => {
+    component['novo']();
+    expect(service.listar).toHaveBeenCalledTimes(1);
+    expect(notificacao.sucesso).not.toHaveBeenCalled();
+  });
+
+  it('deve oferecer exclusão para os outros usuários, mas não para a própria conta', () => {
+    const linhas = elemento.querySelectorAll('tr.mat-mdc-row');
+    expect(linhas[0].querySelector('[aria-label="Excluir Ana"]')).toBeNull();
+    expect(linhas[1].querySelector('[aria-label="Excluir Maria"]')).not.toBeNull();
+  });
+
+  it('deve excluir depois da confirmação e recarregar a lista', () => {
+    resultadoDoDialogo = true;
+    component['excluir'](maria);
+
+    expect(abrir).toHaveBeenCalledWith(
+      ConfirmDialog,
+      expect.objectContaining({ data: expect.objectContaining({ titulo: 'Excluir usuário', textoConfirmar: 'Excluir' }) }),
+    );
+    expect(service.excluir).toHaveBeenCalledWith('maria');
+    expect(notificacao.sucesso).toHaveBeenCalledWith('Usuário Maria excluído.');
+    expect(service.listar).toHaveBeenCalledTimes(2);
+  });
+
+  it('deve voltar uma página ao excluir o último usuário dela', () => {
+    component['pagina'].set(1);
+    component['usuarios'].set([joao]);
+    resultadoDoDialogo = true;
+    component['excluir'](joao);
+
+    expect(service.listar).toHaveBeenLastCalledWith(0, 10);
+  });
+
+  it('não deve excluir sem confirmação', () => {
+    resultadoDoDialogo = false;
+    component['excluir'](maria);
+    expect(service.excluir).not.toHaveBeenCalled();
   });
 
   it('deve exibir o estado de erro quando não conseguir carregar', async () => {

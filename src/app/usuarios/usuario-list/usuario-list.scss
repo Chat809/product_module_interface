@@ -107,10 +107,20 @@
   gap: 4px;
 }
 
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .acoes {
-  width: 96px;
+  width: 144px;
   white-space: nowrap;
   text-align: right;
+}
+
+.excluir {
+  color: var(--mat-sys-error);
 }
 
 .estado {

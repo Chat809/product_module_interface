@@ -7,12 +7,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { filter, finalize } from 'rxjs';
+import { filter, finalize, switchMap } from 'rxjs';
 import { ACESSO_TOTAL, MODULOS, ROTULOS_PAPEL } from '../../core/auth/acessos';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { Avatar } from '../../shared/avatar/avatar';
+import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { SenhaDialog } from '../senha-dialog/senha-dialog';
 import { UsuarioFormData, UsuarioFormDialog } from '../usuario-form/usuario-form';
@@ -91,6 +92,46 @@ export class UsuarioList implements OnInit {
       return ['Acesso total'];
     }
     return MODULOS.filter((m) => usuario.acessos.includes(m.chave)).map((m) => m.rotulo);
+  }
+
+  protected novo(): void {
+    this.dialog
+      .open<UsuarioFormDialog, UsuarioFormData, Usuario>(UsuarioFormDialog, {
+        data: { ehVoce: false },
+        width: '560px',
+        maxWidth: '95vw',
+      })
+      .afterClosed()
+      .pipe(filter((criado): criado is Usuario => !!criado))
+      .subscribe((criado) => {
+        this.notificacao.sucesso(`Usuário ${criado.nome} criado.`);
+        this.carregar();
+      });
+  }
+
+  /** A conta sai do login; demandas e lançamentos que ela criou ficam, sem autor. */
+  protected excluir(usuario: Usuario): void {
+    this.dialog
+      .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
+        data: {
+          titulo: 'Excluir usuário',
+          mensagem: `Excluir a conta de ${usuario.nome} (${usuario.email})? A pessoa perde o acesso ao painel e a ação não pode ser desfeita.`,
+          textoConfirmar: 'Excluir',
+        },
+      })
+      .afterClosed()
+      .pipe(
+        filter(Boolean),
+        switchMap(() => this.usuarioService.excluir(usuario.id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.notificacao.sucesso(`Usuário ${usuario.nome} excluído.`);
+        if (this.usuarios().length === 1 && this.pagina() > 0) {
+          this.pagina.update((p) => p - 1);
+        }
+        this.carregar();
+      });
   }
 
   protected editar(usuario: Usuario): void {

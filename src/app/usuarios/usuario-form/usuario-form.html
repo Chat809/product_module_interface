@@ -1,5 +1,5 @@
 <header class="cabecalho">
-  <h2 mat-dialog-title>Editar usuário</h2>
+  <h2 mat-dialog-title>{{ criando ? 'Novo usuário' : 'Editar usuário' }}</h2>
   <button mat-icon-button type="button" aria-label="Fechar" mat-dialog-close>
     <mat-icon>close</mat-icon>
   </button>
@@ -7,6 +7,7 @@
 
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
   <mat-dialog-content class="formulario">
+    @if (!criando) {
     <div class="foto">
       <app-avatar [nome]="usuario.nome" [url]="avatarUrl()" [tamanho]="56" />
       <input #arquivo type="file" hidden [accept]="tiposAceitos" (change)="escolherFoto($event)" />
@@ -28,6 +29,7 @@
       }
       <span class="dica-foto">PNG, JPG ou WebP com até 2 MB. Grava na hora.</span>
     </div>
+    }
 
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Nome</mat-label>
@@ -41,6 +43,29 @@
       <mat-hint>É com este e-mail que a pessoa entra no painel.</mat-hint>
       <mat-error>{{ mensagemDeErro('email') }}</mat-error>
     </mat-form-field>
+
+    @if (criando) {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Senha inicial</mat-label>
+        <input
+          matInput
+          [type]="senhaVisivel() ? 'text' : 'password'"
+          formControlName="senha"
+          autocomplete="new-password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="senhaVisivel.set(!senhaVisivel())"
+          [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <mat-icon>{{ senhaVisivel() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>Mínimo de 6 caracteres. Repasse à pessoa por um canal seguro.</mat-hint>
+        <mat-error>{{ mensagemDeErro('senha') }}</mat-error>
+      </mat-form-field>
+    }
 
     <div class="linha">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -99,16 +124,23 @@
       }
     </fieldset>
 
-    <p class="dica">
-      <mat-icon>schedule</mat-icon>
-      Nível de acesso e acessos novos valem a partir do próximo login (ou da renovação automática da sessão, em até 1 hora).
-    </p>
+    @if (criando) {
+      <p class="dica">
+        <mat-icon>photo_camera</mat-icon>
+        A foto pode ser enviada depois, em Editar, ou pela própria pessoa em Meu perfil.
+      </p>
+    } @else {
+      <p class="dica">
+        <mat-icon>schedule</mat-icon>
+        Nível de acesso e acessos novos valem a partir do próximo login (ou da renovação automática da sessão, em até 1 hora).
+      </p>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
     <button mat-button type="button" mat-dialog-close>Cancelar</button>
     <button mat-flat-button type="submit" [disabled]="salvando()">
-      {{ salvando() ? 'Salvando...' : 'Salvar alterações' }}
+      {{ salvando() ? 'Salvando...' : criando ? 'Criar usuário' : 'Salvar alterações' }}
     </button>
   </mat-dialog-actions>
 </form>

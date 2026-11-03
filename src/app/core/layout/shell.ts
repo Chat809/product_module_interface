@@ -242,7 +242,6 @@ interface ItemDeMenu {
     }
 
     .conteudo {
-      view-transition-name: conteudo;
       box-sizing: border-box;
       max-width: 1200px;
       margin: 0 auto;

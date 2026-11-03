@@ -282,24 +282,13 @@ mark.destaque {
   transform: scale(0.98);
 }
 
-// Troca de página: só a área de conteúdo esmaece e sobe um pouco; topo e menu lateral ficam parados
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
+// Troca de página: só a tela que entra é animada; a anterior sai na hora, sem as duas aparecerem juntas
+:where(.conteudo > router-outlet + *) {
+  display: block;
 }
 
-::view-transition-old(conteudo) {
-  animation: 90ms cubic-bezier(0.4, 0, 1, 1) both pagina-sai;
-}
-
-::view-transition-new(conteudo) {
-  animation: 220ms cubic-bezier(0, 0, 0.2, 1) 40ms both pagina-entra;
-}
-
-@keyframes pagina-sai {
-  to {
-    opacity: 0;
-  }
+.conteudo > router-outlet + * {
+  animation: 180ms cubic-bezier(0, 0, 0.2, 1) both pagina-entra;
 }
 
 @keyframes pagina-entra {
@@ -321,8 +310,7 @@ mark.destaque {
     transform: none !important;
   }
 
-  ::view-transition-old(conteudo),
-  ::view-transition-new(conteudo) {
+  .conteudo > router-outlet + * {
     animation: none;
   }
 }

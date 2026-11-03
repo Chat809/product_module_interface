@@ -5,10 +5,16 @@
       Quem é cada pessoa na empresa (departamento e cargo) e o que ela pode fazer no sistema (nível e módulos).
     </p>
   </div>
-  <button mat-stroked-button (click)="carregar()" [disabled]="carregando()">
-    <mat-icon>refresh</mat-icon>
-    Atualizar
-  </button>
+  <div class="botoes">
+    <button mat-stroked-button (click)="carregar()" [disabled]="carregando()">
+      <mat-icon>refresh</mat-icon>
+      Atualizar
+    </button>
+    <button mat-flat-button (click)="novo()">
+      <mat-icon>person_add</mat-icon>
+      Novo usuário
+    </button>
+  </div>
 </header>
 
 @if (carregando() && usuarios().length === 0) {
@@ -98,6 +104,17 @@
           >
             <mat-icon>key</mat-icon>
           </button>
+          @if (!ehVoce(usuario)) {
+            <button
+              mat-icon-button
+              class="excluir"
+              (click)="excluir(usuario)"
+              matTooltip="Excluir usuário"
+              [attr.aria-label]="'Excluir ' + usuario.nome"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
         </td>
       </ng-container>
 

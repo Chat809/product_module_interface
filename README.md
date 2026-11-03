@@ -3,7 +3,7 @@
 [![CI](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml/badge.svg)](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml)
 ![Angular](https://img.shields.io/badge/Angular-22-dd0031)
 ![Angular Material](https://img.shields.io/badge/Angular%20Material-22-3f51b5)
-![Testes](https://img.shields.io/badge/testes-212%20passando-success)
+![Testes](https://img.shields.io/badge/testes-224%20passando-success)
 
 Painel em Angular que consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot, publicada no Render). Começou como a interface do CRUD de produtos pedido no teste técnico e hoje também tem login (e-mail e senha ou Google), acessos por módulo, gestão de usuários, perfil com foto, um quadro Kanban de demandas e um módulo financeiro.
 
@@ -53,7 +53,7 @@ Todas as telas e rotas (conferidas com `app.routes.ts`):
 | Produtos `/produtos` | Módulo `produtos` | Buscar, filtrar, ordenar; cadastrar, editar, excluir; registrar entrada e saída e ver o histórico |
 | Demandas `/demandas` | Módulo `demandas` | Quadro Kanban: criar, editar, arrastar entre colunas, checklist, responsáveis, filtros |
 | Financeiro `/financeiro` | Módulo `financeiro` | Resumo; contas a pagar e a receber com imposto e Pix; dar baixa, cancelar, excluir |
-| Usuários `/usuarios` | Só administrador | Editar nome, e-mail, departamento, cargo, nível de acesso, acessos e foto; definir nova senha |
+| Usuários `/usuarios` | Só administrador | Criar e excluir contas; editar nome, e-mail, departamento, cargo, nível de acesso, acessos e foto; definir nova senha |
 | Meu perfil `/perfil` | Logado (qualquer conta) | Editar nome, telefone, função e bio; enviar foto; ver "Minhas tarefas" |
 | Sem acesso `/sem-acesso` | Logado | Aviso de que nenhum módulo foi liberado |
 
@@ -100,6 +100,8 @@ Comportamentos globais: menu lateral montado com os módulos liberados, menu da 
 | ![Lista de usuários com colunas de departamento, cargo, nível de acesso e acessos](docs/usuarios.png) | ![Modal de edição com foto, departamento, cargo, nível de acesso e caixas de acesso](docs/usuario-edicao.png) |
 
 **O que faz:** o administrador vê todas as contas em uma tabela com colunas separadas para Departamento, Cargo, Nível de acesso (só **Administrador** ou **Usuário**) e Acessos. No modal, edita nome, e-mail, departamento (com sugestões, mas aceita qualquer nome), cargo, nível, módulos liberados e a foto da pessoa, e define nova senha. A foto é gravada na hora, sem esperar o "Salvar". Módulos: Dashboard, Produtos, Demandas, Financeiro, ou acesso total (`*`). Usuários é exclusivo de administradores.
+
+O botão **Novo usuário** abre o mesmo modal, sem a foto e com o campo **Senha inicial** (6 a 72 caracteres): basta nome, e-mail e senha, e a conta já nasce com Dashboard, Produtos e Demandas, que podem ser ajustados ali mesmo. A lixeira de cada linha exclui a conta depois de uma confirmação; ela não aparece na sua própria linha. Demandas e lançamentos criados pela pessoa continuam no sistema.
 
 **Como foi feita:** `MODULOS` (em `core/auth/acessos.ts`) é a fonte única: gera o menu, os guards (`moduloGuard`) e as caixas do modal. Conta nova recebe Dashboard, Produtos e Demandas; Financeiro só quando o admin libera.
 
@@ -172,7 +174,7 @@ Build: `npm run build`, com saída em `dist/product-module-interface/browser`.
 npm test
 ```
 
-São 212 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
+São 224 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
 
 | Arquivo | O que cobre |
 |---|---|

@@ -19,12 +19,13 @@ describe('UsuarioFormDialog', () => {
 
   let fixture: ComponentFixture<UsuarioFormDialog>;
   let component: UsuarioFormDialog;
-  let service: Record<'atualizar' | 'enviarAvatar' | 'removerAvatar', ReturnType<typeof vi.fn>>;
+  let service: Record<'criar' | 'atualizar' | 'enviarAvatar' | 'removerAvatar', ReturnType<typeof vi.fn>>;
   let notificacao: Record<'sucesso' | 'erro', ReturnType<typeof vi.fn>>;
   let fechar: ReturnType<typeof vi.fn>;
 
   async function criar(data: UsuarioFormData): Promise<void> {
     service = {
+      criar: vi.fn(({ senha: _senha, ...dados }) => of({ ...dados, id: 'nova', criadoEm: null })),
       atualizar: vi.fn((_id, dados) => of({ ...maria, ...dados })),
       enviarAvatar: vi.fn(() => of({ ...maria, avatarUrl: 'https://exemplo.com/maria.png' })),
       removerAvatar: vi.fn(() => of({ ...maria, avatarUrl: null })),
@@ -171,6 +172,66 @@ describe('UsuarioFormDialog', () => {
 
     expect(component['mensagemDeErro']('email')).toBe('Este e-mail já pertence a outra conta');
     expect(fechar).not.toHaveBeenCalled();
+  });
+
+  describe('criação', () => {
+    it('deve abrir vazio, com senha e sem a seção de foto', async () => {
+      await criar({ ehVoce: false });
+      const form = component['form'].getRawValue();
+
+      expect(texto()).toContain('Novo usuário');
+      expect(texto()).toContain('Senha inicial');
+      expect(texto()).toContain('Criar usuário');
+      expect(texto()).not.toContain('Enviar foto');
+      expect(form.nome).toBe('');
+      expect(form.papel).toBe('USUARIO');
+      expect(form.modulos).toEqual({ dashboard: true, produtos: true, demandas: true, financeiro: false });
+    });
+
+    it('deve exigir senha de 6 a 72 caracteres', async () => {
+      await criar({ ehVoce: false });
+      component['form'].patchValue({ nome: 'Carla', email: 'carla@exemplo.com' });
+      component['salvar']();
+      expect(component['mensagemDeErro']('senha')).toBe('A senha é obrigatória');
+
+      component['form'].patchValue({ senha: '123' });
+      component['salvar']();
+      expect(component['mensagemDeErro']('senha')).toBe('A senha deve ter pelo menos 6 caracteres');
+      expect(service.criar).not.toHaveBeenCalled();
+    });
+
+    it('deve criar a conta com nome, e-mail, senha e acessos e devolver o usuário criado', async () => {
+      await criar({ ehVoce: false });
+      component['form'].patchValue({
+        nome: ' Carla ',
+        email: 'carla@exemplo.com',
+        senha: 'segredo1',
+        departamento: 'Financeiro',
+      });
+      component['salvar']();
+
+      expect(service.criar).toHaveBeenCalledWith({
+        nome: 'Carla',
+        email: 'carla@exemplo.com',
+        senha: 'segredo1',
+        papel: 'USUARIO',
+        acessos: ['dashboard', 'produtos', 'demandas'],
+        departamento: 'Financeiro',
+        funcao: null,
+      });
+      expect(service.atualizar).not.toHaveBeenCalled();
+      expect(fechar).toHaveBeenCalledWith(expect.objectContaining({ id: 'nova', nome: 'Carla' }));
+    });
+
+    it('deve marcar o e-mail já cadastrado', async () => {
+      await criar({ ehVoce: false });
+      service.criar.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+      component['form'].patchValue({ nome: 'Carla', email: 'maria@exemplo.com', senha: 'segredo1' });
+      component['salvar']();
+
+      expect(component['mensagemDeErro']('email')).toBe('Este e-mail já pertence a outra conta');
+      expect(fechar).not.toHaveBeenCalled();
+    });
   });
 
   it('deve exibir os erros por campo devolvidos pela API', async () => {

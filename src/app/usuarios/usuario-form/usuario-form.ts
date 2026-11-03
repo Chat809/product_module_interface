@@ -21,10 +21,21 @@ import { Avatar } from '../../shared/avatar/avatar';
 import { UsuarioService } from '../usuario.service';
 
 export interface UsuarioFormData {
-  usuario: Usuario;
+  /** Sem usuário, o diálogo cria uma conta nova (com senha inicial). */
+  usuario?: Usuario;
   /** O admin não pode tirar de si mesmo o papel de administrador. */
   ehVoce: boolean;
 }
+
+/** Mesmo padrão de uma conta criada pelo cadastro: Dashboard, Produtos e Demandas. */
+const NOVO_USUARIO: Usuario = {
+  id: '',
+  nome: '',
+  email: '',
+  papel: 'USUARIO',
+  acessos: ['dashboard', 'produtos', 'demandas'],
+  criadoEm: null,
+};
 
 /** Sugestões do campo Departamento; a API aceita qualquer texto de até 80 caracteres. */
 export const DEPARTAMENTOS = [
@@ -38,7 +49,7 @@ export const DEPARTAMENTOS = [
   'Tecnologia',
 ];
 
-type Campo = 'nome' | 'email' | 'departamento' | 'funcao';
+type Campo = 'nome' | 'email' | 'senha' | 'departamento' | 'funcao';
 
 const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
   nome: [
@@ -50,6 +61,11 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     ['required', 'O e-mail é obrigatório'],
     ['email', 'Informe um e-mail válido'],
     ['maxlength', 'O e-mail deve ter no máximo 254 caracteres'],
+  ],
+  senha: [
+    ['required', 'A senha é obrigatória'],
+    ['minlength', 'A senha deve ter pelo menos 6 caracteres'],
+    ['maxlength', 'A senha deve ter no máximo 72 caracteres'],
   ],
   departamento: [['maxlength', 'O departamento deve ter no máximo 80 caracteres']],
   funcao: [['maxlength', 'O cargo deve ter no máximo 80 caracteres']],
@@ -86,8 +102,10 @@ export class UsuarioFormDialog {
 
   private readonly notificacao = inject(Notificacao);
 
-  protected readonly usuario = this.data.usuario;
+  protected readonly criando = !this.data.usuario;
+  protected readonly usuario = this.data.usuario ?? NOVO_USUARIO;
   protected readonly ehVoce = this.data.ehVoce;
+  protected readonly senhaVisivel = signal(false);
   protected readonly papeis: Papel[] = ['USUARIO', 'ADMIN'];
   protected readonly rotulos = ROTULOS_PAPEL;
   /** O módulo de usuários não entra na lista: ele vem do papel ADMIN. */
@@ -103,6 +121,7 @@ export class UsuarioFormDialog {
   protected readonly form = this.fb.group({
     nome: [this.usuario.nome, [Validators.required, Validators.maxLength(100), Validators.pattern(/\S/)]],
     email: [this.usuario.email, [Validators.required, Validators.email, Validators.maxLength(254)]],
+    senha: ['', this.criando ? [Validators.required, Validators.minLength(6), Validators.maxLength(72)] : []],
     departamento: [this.usuario.departamento ?? '', [Validators.maxLength(80)]],
     funcao: [this.usuario.funcao ?? '', [Validators.maxLength(80)]],
     papel: [{ value: this.usuario.papel, disabled: this.ehVoce }],
@@ -159,16 +178,19 @@ export class UsuarioFormDialog {
       return;
     }
     const valor = this.form.getRawValue();
+    const dados = {
+      nome: valor.nome.trim(),
+      email: valor.email.trim(),
+      papel: valor.papel,
+      acessos: this.acessosEscolhidos(),
+      departamento: textoOuNulo(valor.departamento),
+      funcao: textoOuNulo(valor.funcao),
+    };
     this.salvando.set(true);
-    this.usuarioService
-      .atualizar(this.usuario.id, {
-        nome: valor.nome.trim(),
-        email: valor.email.trim(),
-        papel: valor.papel,
-        acessos: this.acessosEscolhidos(),
-        departamento: textoOuNulo(valor.departamento),
-        funcao: textoOuNulo(valor.funcao),
-      })
+    (this.criando
+      ? this.usuarioService.criar({ ...dados, senha: valor.senha })
+      : this.usuarioService.atualizar(this.usuario.id, dados)
+    )
       .pipe(
         finalize(() => this.salvando.set(false)),
         takeUntilDestroyed(this.destroyRef),
