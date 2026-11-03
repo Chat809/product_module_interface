@@ -24,6 +24,14 @@ Painel administrativo em Angular para gerenciar produtos e estoque, com login, r
 
 ## Telas
 
+| Login | Criar conta |
+|---|---|
+| ![Tela de login com e-mail, senha e link para criar conta](docs/login.png) | ![Tela de registro com nome, e-mail, senha e confirmação](docs/registro.png) |
+
+| Usuários e papéis (somente admin) | Menu da conta, com papel e botão Sair |
+|---|---|
+| ![Página de usuários com a troca de papel](docs/usuarios.png) | ![Menu da conta aberto na barra superior](docs/menu-usuario.png) |
+
 | Lista com busca instantânea e destaque | Modo escuro |
 |---|---|
 | ![Lista de produtos filtrada pela busca "cadeira", com o termo destacado](docs/lista-busca.png) | ![Lista de produtos no modo escuro](docs/lista-escuro.png) |
