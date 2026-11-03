@@ -65,10 +65,12 @@ interface ItemDeMenu {
           [matMenuTriggerFor]="menuUsuario"
           [attr.aria-label]="'Conta de ' + usuario.nome"
         >
-          <app-avatar [nome]="usuario.nome" [url]="usuario.avatarUrl" [tamanho]="28" />
-          @if (!celular()) {
-            <span class="nome-usuario">{{ usuario.nome }}</span>
-          }
+          <span class="conta-botao">
+            <app-avatar [nome]="usuario.nome" [url]="usuario.avatarUrl" [tamanho]="28" />
+            @if (!celular()) {
+              <span class="nome-usuario">{{ usuario.nome }}</span>
+            }
+          </span>
         </button>
         <mat-menu #menuUsuario="matMenu" xPosition="before">
           <div class="conta" (click)="$event.stopPropagation()">
@@ -157,13 +159,22 @@ interface ItemDeMenu {
       flex: 1;
     }
 
-    .toolbar .usuario {
-      color: inherit;
-      margin-left: 4px;
+    .toolbar {
+      gap: 4px;
     }
 
-    .toolbar .usuario app-avatar {
-      margin-right: 8px;
+    .toolbar .usuario {
+      height: 40px;
+      padding: 0 12px 0 6px;
+      border-radius: 999px;
+      color: inherit;
+    }
+
+    .conta-botao {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1;
     }
 
     .nome-usuario {
@@ -171,6 +182,7 @@ interface ItemDeMenu {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      font: var(--mat-sys-label-large);
     }
 
     .conta {
@@ -230,6 +242,7 @@ interface ItemDeMenu {
     }
 
     .conteudo {
+      view-transition-name: conteudo;
       box-sizing: border-box;
       max-width: 1200px;
       margin: 0 auto;

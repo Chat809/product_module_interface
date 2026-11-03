@@ -261,8 +261,68 @@ mark.destaque {
   padding: 0 1px;
 }
 
+// Resposta ao clique: o elemento afunda levemente enquanto pressionado, somando-se ao ripple do Material
+.mat-mdc-button-base,
+.mat-mdc-list-item,
+.mat-mdc-menu-item,
+.mat-mdc-tab {
+  transition:
+    transform 120ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color var(--app-transicao),
+    box-shadow var(--app-transicao);
+}
+
+.mat-mdc-button-base:not(:disabled):not(.mat-mdc-button-disabled):active {
+  transform: scale(0.96);
+}
+
+.mat-mdc-list-item:active,
+.mat-mdc-menu-item:active,
+.mat-mdc-tab:active {
+  transform: scale(0.98);
+}
+
+// Troca de página: só a área de conteúdo esmaece e sobe um pouco; topo e menu lateral ficam parados
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(conteudo) {
+  animation: 90ms cubic-bezier(0.4, 0, 1, 1) both pagina-sai;
+}
+
+::view-transition-new(conteudo) {
+  animation: 220ms cubic-bezier(0, 0, 0.2, 1) 40ms both pagina-entra;
+}
+
+@keyframes pagina-sai {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pagina-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
+    animation: none;
+  }
+
+  .mat-mdc-button-base,
+  .mat-mdc-list-item,
+  .mat-mdc-menu-item,
+  .mat-mdc-tab {
+    transform: none !important;
+  }
+
+  ::view-transition-old(conteudo),
+  ::view-transition-new(conteudo) {
     animation: none;
   }
 }
