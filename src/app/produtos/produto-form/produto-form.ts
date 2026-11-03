@@ -12,6 +12,7 @@ import { finalize } from 'rxjs';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { Loading } from '../../shared/loading/loading';
+import { SomenteNumeros } from '../../shared/somente-numeros/somente-numeros';
 import { ProdutoRequest } from '../produto.model';
 import { ProdutoService } from '../produto.service';
 
@@ -48,6 +49,7 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     MatIconModule,
     MatInputModule,
     Loading,
+    SomenteNumeros,
   ],
   templateUrl: './produto-form.html',
   styleUrl: './produto-form.scss',
