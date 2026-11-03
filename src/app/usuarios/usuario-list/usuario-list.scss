@@ -37,12 +37,17 @@
   }
 }
 
+.pessoa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .nome {
   font: var(--mat-sys-title-small);
 }
 
 .voce {
-  margin-left: 8px;
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--mat-sys-secondary-container);

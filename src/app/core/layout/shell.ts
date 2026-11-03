@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Component, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
+import { PerfilService } from '../../perfil/perfil.service';
+import { Avatar } from '../../shared/avatar/avatar';
 import { descreverAcessos } from '../auth/acessos';
 import { AuthService } from '../auth/auth.service';
 import { Tema } from '../tema/tema.service';
@@ -23,6 +25,7 @@ interface ItemDeMenu {
 @Component({
   selector: 'app-shell',
   imports: [
+    Avatar,
     MatButtonModule,
     MatIconModule,
     MatListModule,
@@ -61,7 +64,7 @@ interface ItemDeMenu {
           [matMenuTriggerFor]="menuUsuario"
           [attr.aria-label]="'Conta de ' + usuario.nome"
         >
-          <mat-icon>account_circle</mat-icon>
+          <app-avatar [nome]="usuario.nome" [url]="usuario.avatarUrl" [tamanho]="28" />
           @if (!celular()) {
             <span class="nome-usuario">{{ usuario.nome }}</span>
           }
@@ -75,6 +78,10 @@ interface ItemDeMenu {
             </span>
             <span class="acessos">Acessos: {{ descreverAcessos(usuario) }}</span>
           </div>
+          <a mat-menu-item routerLink="/perfil">
+            <mat-icon>person</mat-icon>
+            <span>Meu perfil</span>
+          </a>
           <button mat-menu-item (click)="auth.sair()">
             <mat-icon>logout</mat-icon>
             <span>Sair</span>
@@ -151,6 +158,10 @@ interface ItemDeMenu {
       margin-left: 4px;
     }
 
+    .toolbar .usuario app-avatar {
+      margin-right: 8px;
+    }
+
     .nome-usuario {
       max-width: 180px;
       overflow: hidden;
@@ -222,10 +233,19 @@ interface ItemDeMenu {
     }
   `,
 })
-export class Shell {
+export class Shell implements OnInit {
   protected readonly tema = inject(Tema);
   protected readonly auth = inject(AuthService);
+  private readonly perfilService = inject(PerfilService);
   protected readonly descreverAcessos = descreverAcessos;
+
+  /** Traz a foto e o nome atuais para o topo; se falhar, o painel segue com os dados da sessão. */
+  ngOnInit(): void {
+    this.perfilService.buscar(true).subscribe({
+      next: ({ telefone, funcao, bio, ...usuario }) => this.auth.atualizarUsuario(usuario),
+      error: () => undefined,
+    });
+  }
 
   protected readonly itens = computed<ItemDeMenu[]>(() =>
     this.auth.modulosLiberados().map(({ rota, rotulo, icone }) => ({ rota, rotulo, icone })),

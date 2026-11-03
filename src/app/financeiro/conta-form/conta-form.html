@@ -1,0 +1,115 @@
+<header class="cabecalho">
+  <h2 mat-dialog-title>
+    {{ conta ? 'Editar conta' : tipo === 'contas-pagar' ? 'Nova conta a pagar' : 'Nova conta a receber' }}
+  </h2>
+  <button mat-icon-button type="button" aria-label="Fechar" mat-dialog-close>
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
+  <mat-dialog-content class="formulario">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Descrição</mat-label>
+      <input matInput formControlName="descricao" maxlength="150" cdkFocusInitial />
+      <mat-error>{{ mensagemDeErro('descricao') }}</mat-error>
+    </mat-form-field>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ dados.pessoa }}</mat-label>
+        <input matInput formControlName="pessoa" maxlength="150" />
+        <mat-hint>{{ dados.dicaPessoa }}</mat-hint>
+        <mat-error>{{ mensagemDeErro('pessoa') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>CPF/CNPJ (opcional)</mat-label>
+        <input matInput formControlName="documento" maxlength="30" />
+        <mat-error>{{ mensagemDeErro('documento') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Valor bruto (R$)</mat-label>
+        <input matInput type="number" formControlName="valor" appSomenteNumeros decimal min="0.01" step="0.01" />
+        <mat-error>{{ mensagemDeErro('valor') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Imposto (%)</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="percentualImposto"
+          appSomenteNumeros
+          decimal
+          min="0"
+          max="100"
+          step="0.01"
+        />
+        <mat-error>{{ mensagemDeErro('percentualImposto') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="calculo" aria-live="polite">
+      @if (calculo(); as calculo) {
+        <span>Imposto <strong>{{ calculo.imposto | currency }}</strong></span>
+        <span>
+          {{ tipo === 'contas-pagar' ? 'Sai do caixa' : 'Entra no caixa' }}
+          <strong>{{ calculo.liquido | currency }}</strong>
+        </span>
+      } @else {
+        <span>Informe o valor para ver o imposto e o líquido.</span>
+      }
+    </div>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Vencimento</mat-label>
+        <input matInput type="date" formControlName="vencimento" />
+        <mat-error>{{ mensagemDeErro('vencimento') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Categoria (opcional)</mat-label>
+        <input matInput formControlName="categoria" maxlength="60" placeholder="Ex.: Aluguel" />
+        <mat-error>{{ mensagemDeErro('categoria') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Forma de pagamento</mat-label>
+        <mat-select formControlName="formaPagamento">
+          @for (forma of formas; track forma[0]) {
+            <mat-option [value]="forma[0]">{{ forma[1] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (forma() === 'PIX') {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Chave Pix</mat-label>
+          <input matInput formControlName="chavePix" maxlength="140" />
+          <mat-hint>E-mail, telefone, CPF/CNPJ ou chave aleatória</mat-hint>
+          <mat-error>{{ mensagemDeErro('chavePix') }}</mat-error>
+        </mat-form-field>
+      }
+    </div>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Observações</mat-label>
+      <textarea matInput formControlName="observacoes" rows="2" maxlength="1000"></textarea>
+      <mat-error>{{ mensagemDeErro('observacoes') }}</mat-error>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando...' : conta ? 'Salvar alterações' : 'Lançar conta' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -1,0 +1,166 @@
+<div class="barra">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-situacao">
+    <mat-label>Situação</mat-label>
+    <mat-select [value]="filtro().situacao" (selectionChange)="filtrar({ situacao: $event.value })">
+      @for (situacao of situacoes(); track situacao[0]) {
+        <mat-option [value]="situacao[0]">{{ situacao[1] }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-busca">
+    <mat-icon matPrefix>search</mat-icon>
+    <mat-label>Buscar</mat-label>
+    <input
+      matInput
+      [ngModel]="filtro().busca"
+      (ngModelChange)="digitarBusca($event)"
+      [placeholder]="'Descrição, ' + dados().pessoa.toLowerCase() + ' ou categoria'"
+    />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-data">
+    <mat-label>Vence de</mat-label>
+    <input matInput type="date" [ngModel]="filtro().vencimentoDe" (ngModelChange)="filtrar({ vencimentoDe: $event })" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-data">
+    <mat-label>até</mat-label>
+    <input matInput type="date" [ngModel]="filtro().vencimentoAte" (ngModelChange)="filtrar({ vencimentoAte: $event })" />
+  </mat-form-field>
+
+  <span class="espaco"></span>
+  <button mat-flat-button type="button" (click)="nova()">
+    <mat-icon>add</mat-icon>
+    {{ tipo() === 'contas-pagar' ? 'Nova conta a pagar' : 'Nova conta a receber' }}
+  </button>
+</div>
+
+@if (!carregouUmaVez() && erro()) {
+  <div class="estado">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Não foi possível carregar as contas.</p>
+    <button mat-stroked-button type="button" (click)="carregar()">Tentar novamente</button>
+  </div>
+} @else if (!carregouUmaVez()) {
+  <app-skeleton [linhas]="4" />
+} @else {
+  <div class="tabela" [class.atualizando]="carregando()">
+    <table mat-table [dataSource]="contas()">
+      <ng-container matColumnDef="vencimento">
+        <th mat-header-cell *matHeaderCellDef>Vencimento</th>
+        <td mat-cell *matCellDef="let conta" class="data" [class.vencida]="conta.vencida">
+          {{ conta.vencimento | date: 'dd/MM/yyyy' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="descricao">
+        <th mat-header-cell *matHeaderCellDef>Descrição</th>
+        <td mat-cell *matCellDef="let conta">
+          <span class="descricao">{{ conta.descricao }}</span>
+          @if (conta.categoria) {
+            <span class="categoria">{{ conta.categoria }}</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="pessoa">
+        <th mat-header-cell *matHeaderCellDef>{{ dados().pessoa }}</th>
+        <td mat-cell *matCellDef="let conta">{{ conta.pessoa }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="forma">
+        <th mat-header-cell *matHeaderCellDef>Forma</th>
+        <td mat-cell *matCellDef="let conta">
+          <span [matTooltip]="conta.chavePix ? 'Chave Pix: ' + conta.chavePix : ''">{{ formas[conta.formaPagamento] }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="valor">
+        <th mat-header-cell *matHeaderCellDef class="numero">Valor</th>
+        <td mat-cell *matCellDef="let conta" class="numero">{{ conta.valor | currency }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="imposto">
+        <th mat-header-cell *matHeaderCellDef class="numero">Imposto</th>
+        <td mat-cell *matCellDef="let conta" class="numero secundario">
+          @if (conta.percentualImposto > 0) {
+            {{ conta.valorImposto | currency }}
+            <small>({{ conta.percentualImposto | number: '1.0-2' }}%)</small>
+          } @else {
+            —
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="liquido">
+        <th mat-header-cell *matHeaderCellDef class="numero">Líquido</th>
+        <td mat-cell *matCellDef="let conta" class="numero liquido">{{ conta.valorLiquido | currency }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Situação</th>
+        <td mat-cell *matCellDef="let conta">
+          <span
+            class="situacao"
+            [attr.data-status]="conta.vencida ? 'VENCIDA' : conta.status"
+            [matTooltip]="conta.dataBaixa ? dados().rotuloData + ': ' + (conta.dataBaixa | date: 'dd/MM/yyyy') : ''"
+          >
+            {{ rotuloDoStatus(conta) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acoes">
+        <th mat-header-cell *matHeaderCellDef><span class="cdk-visually-hidden">Ações</span></th>
+        <td mat-cell *matCellDef="let conta" class="acoes">
+          @if (conta.status === 'PENDENTE') {
+            <button
+              mat-icon-button
+              type="button"
+              [matTooltip]="dados().acaoBaixa"
+              [attr.aria-label]="dados().acaoBaixa + ': ' + conta.descricao"
+              (click)="darBaixa(conta)"
+            >
+              <mat-icon>task_alt</mat-icon>
+            </button>
+          }
+          <button mat-icon-button type="button" [matMenuTriggerFor]="menu" [attr.aria-label]="'Mais ações: ' + conta.descricao">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu" xPosition="before">
+            @if (conta.status === 'PENDENTE') {
+              <button mat-menu-item (click)="editar(conta)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <button mat-menu-item (click)="cancelar(conta)">
+                <mat-icon>block</mat-icon>
+                <span>Cancelar</span>
+              </button>
+            }
+            <button mat-menu-item (click)="excluir(conta)">
+              <mat-icon>delete</mat-icon>
+              <span>Excluir</span>
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+      <tr mat-row *matRowDef="let row; columns: colunas"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="vazio" [attr.colspan]="colunas.length">Nenhuma conta encontrada com estes filtros.</td>
+      </tr>
+    </table>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pagina()"
+      [pageSize]="tamanhoPagina()"
+      [pageSizeOptions]="[10, 20, 50, 100]"
+      (page)="mudarPagina($event)"
+      [attr.aria-label]="'Paginação de ' + dados().titulo.toLowerCase()"
+    />
+  </div>
+}

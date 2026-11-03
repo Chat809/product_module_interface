@@ -3,18 +3,17 @@
 [![CI](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml/badge.svg)](https://github.com/Chat809/product_module_interface/actions/workflows/ci.yml)
 ![Angular](https://img.shields.io/badge/Angular-22-dd0031)
 ![Angular Material](https://img.shields.io/badge/Angular%20Material-22-3f51b5)
-![Testes](https://img.shields.io/badge/testes-149%20passando-success)
+![Testes](https://img.shields.io/badge/testes-202%20passando-success)
 
-Painel administrativo em Angular para gerenciar produtos e estoque, com login por e-mail e senha ou pelo Google, registro, papéis e acessos por módulo. Consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot), publicada no Render.
+Painel em Angular que consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot, publicada no Render). Começou como a interface do CRUD de produtos pedido no teste técnico e hoje também tem login (e-mail e senha ou Google), acessos por módulo, gestão de usuários, perfil com foto, um quadro Kanban de demandas e um módulo financeiro.
 
 ![Dashboard do painel](docs/dashboard.png)
 
 ## Sumário
 
-- [Links rápidos](#links-rápidos) · [Telas](#telas) · [Funcionalidades](#funcionalidades)
-- [Login e sessão](#login-e-sessão), [Login com Google](#login-com-google) e [Acessos por módulo](#acessos-por-módulo)
-- [Stack](#stack) · [Como executar](#como-executar) · [Testes](#testes) · [Build](#build)
-- [Estrutura e rotas](#estrutura-e-rotas) · [Decisões](#decisões) · [Deploy na Vercel](#deploy-na-vercel) · [Referências](#referências)
+- [Links rápidos](#links-rápidos) · [O que o painel cobre do teste](#o-que-o-painel-cobre-do-teste) · [O que tem no painel](#o-que-tem-no-painel)
+- Funcionalidades em detalhe: [Login, Criar conta e Google](#login-criar-conta-e-google) · [Dashboard](#dashboard) · [Produtos e estoque](#produtos-e-estoque) · [Usuários e acessos](#usuários-e-acessos) · [Meu perfil](#meu-perfil) · [Demandas](#demandas) · [Financeiro](#financeiro)
+- Referência técnica: [Stack](#stack) · [Como executar](#como-executar) · [Testes](#testes) · [Estrutura e rotas](#estrutura-e-rotas) · [Decisões](#decisões) · [Segurança](#segurança) · [Deploy na Vercel](#deploy-na-vercel) · [Referências](#referências)
 
 ## Links rápidos
 
@@ -22,101 +21,132 @@ Painel administrativo em Angular para gerenciar produtos e estoque, com login po
 |---|---|
 | Painel publicado (Vercel) | https://productmoduleinterface.vercel.app |
 | API usada pelo painel (Render) | https://product-module-api.onrender.com/api/v1/produtos |
-| Swagger UI da API (testar os endpoints no navegador) | https://product-module-api.onrender.com/swagger-ui.html |
-| Health check da API | https://product-module-api.onrender.com/actuator/health |
+| Swagger UI da API | https://product-module-api.onrender.com/swagger-ui.html |
 | Repositório da API | https://github.com/Chat809/product_module_api |
 | Execuções do CI | https://github.com/Chat809/product_module_interface/actions |
 
-> A API roda no plano gratuito do Render: depois de um tempo sem uso, a primeira carga do painel pode levar até um minuto. O painel mostra um aviso enquanto isso.
+> A API roda no plano gratuito do Render: depois de um tempo sem uso, a primeira carga pode levar até um minuto. O painel mostra um aviso enquanto isso.
 
-## Telas
+## O que o painel cobre do teste
 
-| Login com e-mail e senha ou Google | Criar conta |
+O PDF pede uma API de produtos; o painel é o cliente dela e usa todos os endpoints pedidos:
+
+| Requisito da API | Onde aparece no painel |
 |---|---|
-| ![Tela de login com e-mail, senha, botão Entrar com Google e link para criar conta](docs/login.png) | ![Tela de registro com nome, e-mail, senha, confirmação e botão Criar conta com Google](docs/registro.png) |
+| Consultar todos os produtos | Lista de produtos e Dashboard (`GET /produtos`) |
+| Consultar produto por id | Modal de movimentação, que relê o produto depois de registrar entrada ou saída (`GET /produtos/{id}`) |
+| Criar produto | Botão "Novo produto" (`POST /produtos`) |
+| Atualizar produto | Modal de edição (`PUT /produtos/{id}`) |
+| Remover produto | Ação de excluir na lista, com confirmação (`DELETE /produtos/{id}`) |
 
-| Usuários, cargos e acessos (somente admin) | Menu da conta, com papel, acessos e botão Sair |
+## O que tem no painel
+
+Todas as telas e rotas (conferidas com `app.routes.ts`):
+
+| Tela e rota | Quem acessa | O que dá para fazer |
+|---|---|---|
+| Login `/login` | Público (sem sessão) | Entrar com e-mail e senha ou com Google |
+| Criar conta `/registro` | Público (sem sessão) | Criar conta de Usuário, com formulário ou Google |
+| Retorno do Google `/auth/callback` | Público | Concluir o login com Google e voltar à página pedida |
+| Raiz `/` | Logado | Redireciona para o primeiro módulo liberado |
+| Dashboard `/dashboard` | Módulo `dashboard` | Ver indicadores do estoque e a lista "Precisa repor"; registrar entrada |
+| Produtos `/produtos` | Módulo `produtos` | Buscar, filtrar, ordenar; cadastrar, editar, excluir; registrar entrada e saída e ver o histórico |
+| Demandas `/demandas` | Módulo `demandas` | Quadro Kanban: criar, editar, arrastar entre colunas, checklist, responsáveis, filtros |
+| Financeiro `/financeiro` | Módulo `financeiro` | Resumo; contas a pagar e a receber com imposto e Pix; dar baixa, cancelar, excluir |
+| Usuários `/usuarios` | Só administrador | Editar nome, e-mail, cargo e acessos; definir nova senha |
+| Meu perfil `/perfil` | Logado (qualquer conta) | Editar nome, telefone, função e bio; enviar foto; ver "Minhas tarefas" |
+| Sem acesso `/sem-acesso` | Logado | Aviso de que nenhum módulo foi liberado |
+
+Comportamentos globais: menu lateral montado com os módulos liberados, menu da conta com foto, papel, acessos, "Meu perfil" e "Sair", modo claro/escuro salvo no navegador, avisos padronizados para cada erro da API (Problem Details), sessão renovada sozinha e aviso de sessão expirada quando a renovação falha.
+
+## Funcionalidades em detalhe
+
+### Login, Criar conta e Google
+
+| Login | Criar conta |
 |---|---|
-| ![Página de usuários com cargo, acessos e ações de editar e trocar a senha](docs/usuarios.png) | ![Menu da conta aberto na barra superior](docs/menu-usuario.png) |
+| ![Tela de login com e-mail, senha e botão Entrar com Google](docs/login.png) | ![Tela de registro com nome, e-mail, senha e confirmação](docs/registro.png) |
 
-| Edição de usuário com acessos por módulo | Definição de nova senha |
+**O que faz:** entra com e-mail e senha, cria conta (sempre como Usuário, com Dashboard, Produtos e Demandas) ou entra com Google. Depois do login, volta para a página que a pessoa tentou abrir.
+
+**Como foi feita:** o `AuthService` chama `POST /auth/login`, `/auth/registro` ou `/auth/google` e guarda a sessão no `localStorage`. O Google usa PKCE: o painel gera o verificador, manda só o desafio (SHA-256) ao Supabase e, no retorno em `/auth/callback`, envia código e verificador à API, que troca pela sessão. O `authInterceptor` anexa o token só às chamadas da API e renova a sessão uma única vez em caso de 401.
+
+**Por quê:** o painel não conhece nenhuma chave do Supabase, só o endereço público (`supabaseUrl`); toda troca de credencial passa pela API. Com PKCE, o token nunca aparece na URL. Renovação única porque o Supabase invalida o refresh token a cada uso.
+
+### Dashboard
+
+**O que faz:** mostra total de produtos, itens, valor do estoque, esgotados e estoque baixo, e a lista "Precisa repor" com atalho para registrar entrada.
+
+**Como foi feita:** usa `GET /produtos/resumo` para os números e o catálogo em memória (`ProdutoStore`) para a lista. O atalho só aparece para quem também tem o módulo Produtos.
+
+**Por quê:** é a primeira tela útil para quem cuida do estoque; os números vêm prontos da API para não depender do tamanho do catálogo carregado.
+
+### Produtos e estoque
+
+| Busca com destaque | Movimentação de estoque |
 |---|---|
-| ![Modal de edição com nome, e-mail, cargo e caixas de acesso](docs/usuario-edicao.png) | ![Modal de nova senha com confirmação](docs/usuario-senha.png) |
+| ![Lista filtrada pela busca "cadeira", com o termo destacado](docs/lista-busca.png) | ![Modal de movimentação com saldo previsto e histórico](docs/modal-movimentacao.png) |
 
-| Lista com busca instantânea e destaque | Modo escuro |
+**O que faz:** lista com busca instantânea (sem acentos, vários termos, trecho destacado), chips de situação do estoque, ordenação e paginação; cadastro e edição em modal; entrada e saída de estoque com saldo previsto e histórico; aviso de edição concorrente.
+
+**Como foi feita:** o catálogo é carregado uma vez (até 500 itens) e filtrado no navegador por funções puras (`produto-filtro.ts`). A versão lida vai no `If-Match`; se outra pessoa salvou antes, a API responde 409 e o painel avisa, recarrega o catálogo e fecha o modal.
+
+**Por quê:** busca a cada tecla sem requisição nem espera pela API no plano gratuito; modais preservam busca, filtros e página.
+
+### Usuários e acessos
+
+| Usuários, cargos e acessos | Edição com acessos por módulo |
 |---|---|
-| ![Lista de produtos filtrada pela busca "cadeira", com o termo destacado](docs/lista-busca.png) | ![Lista de produtos no modo escuro](docs/lista-escuro.png) |
+| ![Lista de usuários com foto, cargo e acessos](docs/usuarios.png) | ![Modal de edição com cargo e caixas de acesso](docs/usuario-edicao.png) |
 
-| Edição em modal | Movimentação de estoque com saldo previsto e histórico |
-|---|---|
-| ![Modal de edição de produto](docs/modal-edicao.png) | ![Modal de movimentação de estoque](docs/modal-movimentacao.png) |
+**O que faz:** o administrador vê todas as contas (com foto), edita nome, e-mail, cargo e módulos liberados e define nova senha. Módulos: Dashboard, Produtos, Demandas, Financeiro, ou acesso total (`*`). Usuários é exclusivo de administradores.
 
-![Dashboard no modo escuro](docs/dashboard-escuro.png)
+**Como foi feita:** `MODULOS` (em `core/auth/acessos.ts`) é a fonte única: gera o menu, os guards (`moduloGuard`) e as caixas do modal. Conta nova recebe Dashboard, Produtos e Demandas; Financeiro só quando o admin libera.
 
-## Funcionalidades
+**Por quê:** os guards são conveniência de navegação, a API confere de novo cada acesso. Financeiro fica fora do padrão por ter dados sensíveis. O e-mail só é editável pelo admin porque é o login da pessoa. Acessos novos valem no próximo login ou na renovação da sessão (até 1 hora).
 
-**Acesso**
+### Meu perfil
 
-- **Tela de login** com e-mail e senha, botão **Entrar com Google** e link para criar conta. Erros de credencial aparecem no campo, e a senha é limpa depois de uma tentativa errada.
-- **Criar conta** com nome, e-mail, senha e confirmação, com as mesmas regras da API, ou com um clique em **Criar conta com Google**. Um e-mail já cadastrado é avisado no próprio campo.
-- **Login com Google:** quem já tem conta com o mesmo e-mail (usuário ou administrador) entra nela, com o cargo e os acessos de sempre; um e-mail novo ganha conta de usuário. Veja [Login com Google](#login-com-google).
-- **Sessão** salva no navegador, renovada sozinha quando o token expira e encerrada pelo botão **Sair**. Depois do login, a pessoa volta para a página que tentou abrir.
-- **Papéis e acessos por módulo:** cargo (Administrador ou Usuário) e módulos liberados (Dashboard, Produtos ou acesso total `*`). O menu mostra só o que foi liberado e quem não tem nenhum módulo vê "Nenhum módulo liberado". Veja [Acessos por módulo](#acessos-por-módulo).
-- **Gestão de usuários (somente admin):** lista com nome, e-mail, cargo e acessos; modal de edição desses dados e modal de nova senha.
+![Página Meu perfil com foto, dados pessoais e Minhas tarefas](docs/perfil.png)
 
-**Produtos e estoque**
+**O que faz:** qualquer conta edita nome, telefone, função e bio, envia ou remove a foto (PNG, JPG ou WebP até 2 MB) e vê "Minhas tarefas": as demandas abertas em que é responsável, com atalho que abre a demanda no quadro. E-mail, cargo e acessos aparecem só para leitura.
 
-- **Dashboard:** indicadores do estoque (produtos, itens, valor total em reais, esgotados e estoque baixo) e a lista "Precisa repor", com atalho para registrar entrada (só para quem também tem o módulo Produtos).
-- **Busca instantânea:** filtra enquanto você digita, ignora acentos e maiúsculas, aceita vários termos em qualquer ordem e destaca o trecho encontrado, sem requisição a cada tecla.
-- **Filtros e ordenação:** chips por situação do estoque com contagem, ordenação por nome, preço, estoque ou última atualização, e paginação em português.
-- **Cadastro e edição em modal**, com as regras de validação da API e erros no campo correspondente. Fechar com alterações pendentes pede confirmação.
-- **Movimentações de estoque:** entrada e saída com saldo previsto, aviso de estoque insuficiente e histórico.
-- **Edição concorrente:** a versão lida vai no cabeçalho `If-Match`. Se outra pessoa alterou o produto, o painel avisa e recarrega os dados.
+**Como foi feita:** `PerfilService` usa `GET`/`PUT /usuarios/me`, `PUT /usuarios/me/avatar` (multipart, campo `arquivo`) e `DELETE /usuarios/me/avatar`. As tarefas vêm de `GET /demandas?responsavel=me&abertas=true`. Depois de salvar, a sessão é atualizada para o topo mostrar o mesmo nome e foto; ao abrir o painel, o `Shell` busca o perfil em segundo plano, sem aviso se falhar.
 
-**Experiência**
+**Por quê:** a foto é conferida no navegador (tipo e tamanho) só para evitar envio inútil; a API valida de novo pelo conteúdo do arquivo. As tarefas reaproveitam as demandas em vez de criar um cadastro paralelo.
 
-- Toasts padronizados por tipo, modo escuro salvo no navegador, layout responsivo com menu recolhível no celular, skeleton no carregamento e aviso de espera enquanto a API "acorda" no plano gratuito.
+### Demandas
 
-## Login e sessão
+![Quadro Kanban de demandas com quatro colunas](docs/demandas.png)
 
-| Como entrar | O que acontece |
-|---|---|
-| E-mail e senha | O painel envia os dados para `POST /auth/login` da API e guarda a sessão devolvida |
-| Criar conta | `POST /auth/registro` cria a conta como Usuário (Dashboard e Produtos) e já abre a sessão |
-| Google | O navegador vai ao Google pelo Supabase e volta em `/auth/callback`; o painel troca o código pela sessão em `POST /auth/google` |
+**O que faz:** quadro com as colunas A fazer, Em andamento, Em revisão e Concluído. Cada cartão mostra tipo, urgência, prazo (em vermelho se vencido), progresso do checklist e foto dos responsáveis. Arrastar muda a coluna e a posição; o modal edita tudo, inclusive checklist e responsáveis. Filtros: "Só as minhas", urgência e busca.
 
-Nos três casos a sessão tem o mesmo formato (`accessToken`, `refreshToken` e o usuário com cargo e acessos) e fica no `localStorage`. O `authInterceptor` anexa o token só às chamadas para a API e, quando ele expira, renova a sessão uma única vez com `POST /auth/refresh`. Se a renovação falhar, o painel avisa e volta ao login.
+**Como foi feita:** CDK Drag and Drop. Ao soltar, o cartão muda na tela na hora e o painel envia `PATCH /demandas/{id}/status` com `{status, posicao}`; se a API recusar, o quadro é recarregado. Com filtro ativo, o índice visível é convertido para a posição real na coluna (`posicaoNaColuna`). Responsáveis vêm de `GET /usuarios/opcoes` (só id, nome e foto). Excluir aparece só para quem criou a demanda ou para administradores.
 
-## Login com Google
+**Por quê:** a resposta imediata deixa o arrastar fluido mesmo com a API lenta; a ordem é recalculada pelo banco, então duas pessoas movendo cartões não corrompem a coluna.
 
-O botão **Entrar com Google** (ou **Criar conta com Google**, no registro) usa o fluxo **PKCE**, em que o token nunca aparece na URL:
+### Financeiro
 
-1. O painel gera um verificador aleatório, guarda no `sessionStorage` da aba e calcula o desafio, que é o SHA-256 do verificador.
-2. O navegador vai para `https://<projeto>.supabase.co/auth/v1/authorize?provider=google` levando só o desafio. O Supabase manda para o Google, a pessoa escolhe a conta e o Supabase devolve o navegador para `/auth/callback?code=...`.
-3. A tela "Entrando com Google..." envia o código e o verificador para a API (`POST /auth/google`), que troca os dois pela sessão no Supabase.
-4. O painel guarda a sessão, cumprimenta pelo primeiro nome e abre a página pedida antes do login ou o primeiro módulo liberado.
+![Financeiro com resumo e contas a pagar](docs/financeiro.png)
 
-**Quem pode entrar:** qualquer conta Google. Se o e-mail já tem conta no painel, criada pelo registro ou por um admin, o Google é vinculado a ela e a pessoa entra com o mesmo cargo, os mesmos acessos e o mesmo nome; a senha continua funcionando. Um e-mail novo ganha conta de Usuário com Dashboard e Produtos.
+**O que faz:** cards de resumo (a pagar, a receber, vencidos, saldo previsto e resultado do mês) e duas abas, Contas a pagar e Contas a receber, com filtros por situação (pendentes, vencidas, quitadas, canceladas), busca, período de vencimento e paginação. O modal de lançamento mostra o imposto e o valor líquido enquanto se digita e pede a chave Pix quando a forma é Pix. Ações: dar baixa com a data, editar, cancelar e excluir.
 
-**Erros tratados:** cancelar no Google ("Login com Google cancelado."), código expirado ou já usado (mensagem da API), API que não responde a tempo e retorno aberto em outra aba, sem o verificador. Em todos, a pessoa volta para a tela de login com o aviso.
+**Como foi feita:** `FinanceiroService` usa `/financeiro/resumo` e `/financeiro/contas-pagar|contas-receber` (lista paginada, CRUD, `PATCH .../baixa` e `.../cancelamento`). A prévia usa a mesma conta do banco (`calcularImposto`, arredondando em centavos). Depois de cada ação, a lista e o resumo são recarregados.
 
-**Configuração:** o painel só precisa do endereço público do Supabase (`supabaseUrl` em `src/environments`), sem nenhuma chave. O Client ID e o Client Secret do Google ficam no Supabase. O passo a passo do Google Cloud e do Supabase está no [README da API](https://github.com/Chat809/product_module_api#login-com-google). Para testar localmente, `http://localhost:4200/auth/callback` precisa estar nas Redirect URLs do Supabase.
+**Por quê:** o imposto é um percentual e o líquido é calculado pelo banco, então a prévia é só informativa e o valor gravado vem sempre da API. Os totais usam o líquido, que é o que de fato sai ou entra no caixa. Cancelar mantém o histórico; excluir é para lançamento feito por engano.
 
-**Por dentro:** `core/auth/google.ts` gera o verificador e o desafio e monta o endereço; o `AuthService` expõe `entrarComGoogle()` e `concluirGoogle()`; `auth/botao-google` é o botão compartilhado pelo login e pelo registro; `auth/google-callback` é a tela de retorno.
+## Referência técnica
 
-## Stack
+### Stack
 
-- Angular 22 (componentes standalone, signals, zoneless, novo control flow e rotas com lazy loading)
-- Angular Material 22 (Material 3)
+- Angular 22 (standalone, signals, zoneless, control flow novo, rotas com lazy loading)
+- Angular Material 22 (Material 3) e CDK Drag and Drop
 - Reactive Forms
-- Vitest (testes unitários)
+- Vitest
 
-## Pré-requisitos
+### Como executar
 
-- Node.js `^22.22.3` ou `^24.15.0`
-- npm
-
-## Como executar
+Pré-requisitos: Node.js `^22.22.3` ou `^24.15.0` e npm.
 
 ```bash
 git clone https://github.com/Chat809/product_module_interface.git
@@ -125,168 +155,91 @@ npm install
 npm start
 ```
 
-Acesse `http://localhost:4200`.
-
-Em desenvolvimento, o painel consome a API local em `http://localhost:8080/api/v1`. Para subi-la, siga o README da [Produtos API](https://github.com/Chat809/product_module_api#como-executar) (`./mvnw spring-boot:run`). A API sobe com 15 produtos de exemplo e precisa da variável `SUPABASE_SECRET_KEY` para o login funcionar.
-
-Para usar a API publicada no Render sem rodar o backend localmente:
-
-```bash
-npm start -- --configuration production
-```
+Acesse `http://localhost:4200`. Em desenvolvimento, o painel usa a API local em `http://localhost:8080/api/v1` (veja o [README da API](https://github.com/Chat809/product_module_api#como-executar)). Para usar a API do Render: `npm start -- --configuration production`.
 
 | Ambiente | Arquivo | URL da API |
 |---|---|---|
 | Desenvolvimento | `src/environments/environment.development.ts` | `http://localhost:8080/api/v1` |
 | Produção | `src/environments/environment.ts` | `https://product-module-api.onrender.com/api/v1` |
 
-Os dois arquivos também têm `supabaseUrl`, o endereço público do projeto Supabase usado só para iniciar o login com Google.
+Os dois arquivos também têm `supabaseUrl`, o endereço público usado só para iniciar o login com Google.
 
-## Testes
+Build: `npm run build`, com saída em `dist/product-module-interface/browser`.
+
+### Testes
 
 ```bash
 npm test
 ```
 
-São 149 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por objetos falsos (`vi.fn()`) ou intercepta o HTTP com `HttpTestingController`, e verifica o que aparece na tela e quais chamadas foram feitas.
+São 202 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
 
 | Arquivo | O que cobre |
 |---|---|
-| `produto.service.spec.ts` | URLs, parâmetros, métodos HTTP, corpo e cabeçalho `If-Match` de cada operação da API |
-| `produto-filtro.spec.ts` | Normalização sem acentos, filtro por termos e situação, ordenação e destaque |
-| `produto.store.spec.ts` | Carga única do catálogo e atualização local após cada operação |
-| `produto-list.spec.ts` | Busca sem nova chamada à API, chips com contagem, ordenação, paginação, estado vazio e exclusão |
-| `produto-form.spec.ts` | Validações, cadastro, edição com versão, conflito 409 e erros retornados pela API |
-| `movimentacao-dialog.spec.ts` | Histórico, saldo previsto, bloqueio de saída maior que o estoque e registro |
-| `dashboard.spec.ts` | Indicadores do resumo, lista de reposição ordenada, atalho de entrada e atalhos escondidos sem o módulo Produtos |
-| `error.interceptor.spec.ts` | Mensagem exibida para cada status (sem conexão, 400, 401, 403, 409, 422 e erro genérico) |
-| `auth.service.spec.ts` | Login, registro, login com Google (verificador guardado, endereço do Supabase só com o hash, troca do código e retorno sem login iniciado), sessão salva e restaurada, renovação única para chamadas simultâneas, módulos liberados, rota inicial, atualização da própria conta e saída |
-| `google.spec.ts` | Verificador PKCE de 43 caracteres, desafio S256 conferido com o exemplo da RFC 7636 e endereço de autorização |
-| `botao-google.spec.ts` e `google-callback.spec.ts` | Botão que leva a rota de volta e trava enquanto abre o Google; retorno com sucesso, cancelamento, erro do provedor, código recusado, tempo limite e outra aba |
-| `acessos.spec.ts` | Regra de acesso igual à da API: admin acessa tudo, `*` sem o módulo de usuários, padrão para sessões antigas e descrição em texto |
-| `auth.interceptor.spec.ts` | Token só nas chamadas à API, renovação e repetição da requisição em 401, logout se a renovação falhar |
-| `auth.guards.spec.ts` | Redirecionamento ao login guardando a rota, bloqueio por módulo levando ao primeiro módulo liberado e saída do login para quem já entrou |
-| `login.spec.ts` | Validação, cumprimento, retorno à rota pedida, limpeza da senha em caso de erro, despertar da API, tempo limite e botão do Google |
-| `registro.spec.ts` | Regras iguais às da API, confirmação de senha, e-mail já cadastrado, erros por campo, despertar da API, tempo limite e botão do Google |
-| `usuario.service.spec.ts` e `usuario-list.spec.ts` | Listagem paginada com cargo e acessos, marcação da própria conta, edição aplicada na linha e na sessão, e nova senha |
-| `usuario-form.spec.ts` | Módulos marcados, acesso total `*`, promoção a admin, cargo travado na própria conta, e-mail de outra conta (409) e erros por campo |
-| `senha-dialog.spec.ts` | Aviso de que a senha atual não pode ser vista, validação, confirmação e recusa da API |
-| `espera.spec.ts` | Aviso de demora depois de alguns segundos e desistência com tempo limite |
-| `tema.service.spec.ts` | Preferência do sistema, escolha salva e troca de tema |
-| `paginador-intl.spec.ts` | Rótulos da paginação em português |
-| `toast.spec.ts` | Emoji por tipo, papel de acessibilidade e fechamento pelo botão X |
-| `app.spec.ts` | Rotas: sem sessão, abre o login guardando a rota pedida; com sessão, abre o primeiro módulo liberado e bloqueia os demais; sem nenhum módulo, tela de sem acesso; registro acessível sem login |
+| `produto.service.spec.ts`, `produto-filtro.spec.ts`, `produto.store.spec.ts` | URLs, parâmetros e `If-Match`; busca sem acentos, filtros, ordenação e destaque; catálogo em memória |
+| `produto-list.spec.ts`, `produto-form.spec.ts`, `movimentacao-dialog.spec.ts` | Lista, chips, paginação e exclusão; validações, edição com versão e conflito 409; saldo previsto e saída maior que o estoque |
+| `dashboard.spec.ts` | Indicadores, lista de reposição e atalhos escondidos sem o módulo Produtos |
+| `auth.service.spec.ts`, `google.spec.ts`, `botao-google.spec.ts`, `google-callback.spec.ts` | Login, registro, Google com PKCE, sessão salva e renovada, foto mantida na renovação, erros do retorno |
+| `auth.interceptor.spec.ts`, `auth.guards.spec.ts`, `acessos.spec.ts` | Token só para a API e renovação em 401; guards por sessão e módulo; regra de acesso igual à da API |
+| `error.interceptor.spec.ts` | Mensagem por status (0, 400, 401, 403, 409, 413, 422, genérico) e requisições silenciosas |
+| `login.spec.ts`, `registro.spec.ts`, `espera.spec.ts` | Validações, retorno à rota pedida, despertar da API e tempo limite |
+| `usuario.service.spec.ts`, `usuario-list.spec.ts`, `usuario-form.spec.ts`, `senha-dialog.spec.ts` | Lista, edição de cargo e acessos (incluindo Demandas e Financeiro), e nova senha |
+| `avatar.spec.ts`, `perfil.service.spec.ts`, `meu-perfil.spec.ts` | Iniciais e foto com fallback; GET/PUT do perfil e envio multipart; validação de foto, campos nulos, Minhas tarefas e módulo ausente |
+| `demanda.service.spec.ts`, `demanda-board.spec.ts`, `demanda-form.spec.ts` | Endpoints; colunas, filtros, arrastar com posição real, recarga em erro, abrir pela URL; criação com checklist, responsáveis removidos e exclusão permitida |
+| `financeiro.model.spec.ts`, `financeiro.service.spec.ts` | Cálculo de imposto igual ao do banco; tradução dos filtros em parâmetros e endpoints |
+| `conta-lista.spec.ts`, `conta-form.spec.ts`, `baixa-dialog.spec.ts` | Tabela, filtros, busca com espera e ações; prévia do líquido e regra da chave Pix; data da baixa |
+| `app.spec.ts`, `tema.service.spec.ts`, `paginador-intl.spec.ts`, `toast.spec.ts` | Rotas e bloqueios (Financeiro sem módulo, Meu perfil para todos); tema; paginação em português; toasts |
 
-O workflow de CI (`.github/workflows/ci.yml`) roda o build e os testes a cada push e pull request.
-
-## Build
-
-```bash
-npm run build
-```
-
-Os arquivos são gerados em `dist/product-module-interface/browser`.
-
-## Estrutura e rotas
+### Estrutura e rotas
 
 ```
 src/app
-├── app.config.ts             Providers: rotas, HttpClient com interceptors, locale pt-BR, moeda BRL e paginação em português
-├── app.routes.ts             Rotas com lazy loading e guards
-├── auth
-│   ├── login, registro       Telas de entrar e de criar conta
-│   ├── botao-google          Botão "Entrar com Google" compartilhado pelas duas telas
-│   └── google-callback       Tela de retorno do Google, que troca o código pela sessão
+├── app.config.ts, app.routes.ts   Providers (HTTP com interceptors, pt-BR, BRL) e rotas com lazy loading e guards
+├── auth                           Login, registro, botão do Google e retorno do Google
 ├── core
-│   ├── auth                  Sessão (AuthService), PKCE do Google, regras de acesso por módulo, interceptor do token e guards
-│   ├── feedback              Toast padronizado e serviço de notificação
-│   ├── http                  Interceptor que traduz os erros da API (RFC 9457) em avisos
-│   ├── i18n                  Textos do paginador em português
-│   ├── layout                Shell (barra superior, menu lateral por módulo e conteúdo) e tela de sem acesso
-│   └── tema                  Modo claro/escuro
-├── shared
-│   ├── confirm-dialog        Diálogo de confirmação reutilizável
-│   ├── loading               Indicador de carregamento com aviso de partida a frio
-│   ├── skeleton              Linhas de carregamento da tabela
-│   └── somente-numeros       Diretiva que limita campos a caracteres numéricos
-├── dashboard                 Indicadores e lista de reposição
-└── produtos
-    ├── produto.model.ts      Tipos que espelham os DTOs da API
-    ├── produto.service.ts    Comunicação HTTP com a API
-    ├── produto.store.ts      Catálogo em memória compartilhado pelas telas
-    ├── produto-filtro.ts     Funções puras de busca, filtro, ordenação e destaque
-    ├── produto-list          Tabela com busca, filtros, ordenação e paginação
-    ├── produto-form          Modal de cadastro e edição
-    └── movimentacao-dialog   Modal de entrada/saída com histórico
-└── usuarios                  Gestão de usuários (somente admin)
-    ├── usuario.service.ts    Listagem, edição e nova senha
-    ├── usuario-list          Tabela com cargo, acessos e ações
-    ├── usuario-form          Modal de edição: nome, e-mail, cargo e acessos
-    └── senha-dialog          Modal de nova senha
+│   ├── auth                       Sessão, PKCE, MODULOS e regra de acesso, interceptor do token e guards
+│   ├── feedback, http             Toasts e interceptor que traduz os erros da API
+│   ├── layout                     Shell (barra superior com foto, menu por módulo) e tela de sem acesso
+│   └── i18n, tema                 Paginador em português e modo claro/escuro
+├── shared                         Avatar, diálogo de confirmação, skeleton, loading e diretiva de números
+├── dashboard                      Indicadores e reposição
+├── produtos                       Store, filtros, lista, formulário e movimentações
+├── usuarios                       Lista, edição de cargo e acessos, nova senha
+├── perfil                         Meu perfil (dados, foto e Minhas tarefas)
+├── demandas                       Quadro Kanban e modal da demanda
+└── financeiro                     Resumo, lista por tipo de conta, modal de lançamento e baixa
 ```
 
-| Rota | Página | Acesso |
-|---|---|---|
-| `/login` | Entrar | Sem sessão |
-| `/registro` | Criar conta | Sem sessão |
-| `/auth/callback` | Retorno do login com Google | Público |
-| `/` | Redireciona para o primeiro módulo liberado | Logado |
-| `/dashboard` | Indicadores e reposição | Módulo `dashboard` |
-| `/produtos` | Lista de produtos | Módulo `produtos` |
-| `/usuarios` | Usuários, cargos e acessos | Administrador |
-| `/sem-acesso` | Aviso de que nenhum módulo foi liberado | Logado |
+As rotas e quem acessa cada uma estão em [O que tem no painel](#o-que-tem-no-painel).
 
-## Acessos por módulo
+### Decisões
 
-Os acessos ficam na coluna `acessos` (jsonb) da tabela de perfis no Supabase e chegam ao painel junto com o usuário, no login e em `GET /usuarios`. A regra completa, incluindo o banco e a proteção das rotas na API, está no [README da API](https://github.com/Chat809/product_module_api#acessos-por-módulo).
+- **Organização por responsabilidade:** `core` (infraestrutura), `shared` (reutilizáveis) e uma pasta por funcionalidade.
+- **Signals em vez de biblioteca de estado:** o catálogo, o quadro e as listas usam `signal` e `computed`; NgRx seria complexidade sem ganho neste escopo.
+- **Modais em vez de páginas:** cadastrar, editar, movimentar e lançar não tiram a pessoa da lista.
+- **Erros centralizados:** o `errorInterceptor` mostra a mensagem de qualquer erro HTTP; os componentes só tratam erros por campo. Requisições de segundo plano usam o contexto `SEM_AVISO_DE_ERRO`.
+- **Autenticação só pela API:** o painel não fala com o Supabase além do redirecionamento do Google.
+- **A API é a barreira de segurança:** guards e botões escondidos são conveniência; papel, módulo e dono da demanda são conferidos de novo no servidor.
 
-| Valor | O que a pessoa vê |
-|---|---|
-| `["*"]` | Todos os módulos do seu cargo (administradores têm sempre `*`) |
-| `["dashboard", "produtos"]` | Dashboard e Produtos (padrão de toda conta nova) |
-| `["dashboard"]` | Só o Dashboard, sem os atalhos de registrar entrada e ver o catálogo |
-| `["produtos"]` | Só a lista de produtos, que vira a página inicial |
-| `[]` | A tela "Nenhum módulo liberado" |
+### Segurança
 
-O módulo **Usuários** é exclusivo de administradores, por isso não aparece entre as caixas de acesso.
+- Nenhuma chave no painel: só a URL pública do Supabase. Tokens ficam no `localStorage` e só vão no cabeçalho `Authorization` das chamadas à API, nunca em URL ou console.
+- No retorno do Google, o `code` sai da URL com `replaceUrl` e o verificador PKCE é apagado logo após o uso.
+- A lista de responsáveis recebe só id, nome e foto; e-mail e telefone não saem da API para quem não é admin.
 
-**Como o administrador edita:** em **Usuários**, o ícone de lápis abre o modal com nome, e-mail, cargo e acessos. A caixa "Acesso total (`*`)" marca todos os módulos de uma vez. Desmarcada, ela libera a escolha de cada módulo. Ao escolher o cargo Administrador, as caixas somem, porque o acesso passa a ser sempre total. Na própria conta, o cargo fica travado, para que sempre reste ao menos um administrador.
+### Deploy na Vercel
 
-**Senhas:** o ícone de chave abre "Definir nova senha". Não existe "ver senha": o Supabase guarda só o hash, então nem administradores conseguem ler a senha atual de alguém.
-
-**Quando vale:** cargo e acessos novos chegam ao usuário afetado no próximo login ou na renovação automática da sessão (em até 1 hora). Quando o admin edita a própria conta, o painel atualiza a sessão na hora.
-
-**Por dentro:** `core/auth/acessos.ts` tem a lista `MODULOS` (chave, rótulo, ícone e rota) e a função `podeAcessar`, com a mesma regra da API. O `AuthService` expõe `modulosLiberados()` e `rotaInicial()`. O menu lateral é montado a partir de `modulosLiberados()`, e cada rota usa `moduloGuard('dashboard' | 'produtos' | 'usuarios')`. Para criar um módulo novo no painel, basta incluí-lo em `MODULOS` e proteger a rota com `moduloGuard`.
-
-## Decisões
-
-- **Organização por responsabilidade:** `core` (infraestrutura da aplicação), `shared` (componentes reutilizáveis), `dashboard` e `produtos` (as funcionalidades).
-- **Busca em memória:** a API pagina e busca no servidor, mas o painel carrega o catálogo uma vez (até 500 produtos, o maior tamanho de página aceito) e filtra no navegador. Assim a busca responde a cada tecla sem requisições nem espera pela API no plano gratuito. Para catálogos maiores, bastaria trocar o filtro local pelos parâmetros `busca`, `page` e `sort` da API.
-- **Store com signals:** um serviço com `signal` e `computed` guarda o catálogo e o atualiza localmente após cadastrar, editar, movimentar ou excluir. Para este escopo, uma biblioteca de estado (como NgRx) seria complexidade sem ganho.
-- **Modais em vez de páginas:** cadastrar, editar e movimentar acontecem sem sair da lista, preservando busca, filtros e página.
-- **Tratamento de erros centralizado:** o interceptor exibe a mensagem de qualquer erro HTTP; os componentes tratam apenas o que é específico deles, como os erros por campo no formulário.
-- **Autenticação pela API:** o painel não chama o Supabase nem conhece nenhuma chave dele; envia e-mail e senha à API, que devolve o token. No login com Google, o navegador só passa pelo Supabase, e a troca do código pela sessão também é feita pela API, com o verificador PKCE. Assim os três jeitos de entrar produzem a mesma sessão. O `authInterceptor` anexa o token apenas às chamadas para a URL da API e, em um 401, renova a sessão uma única vez (chamadas simultâneas compartilham a mesma renovação, porque o Supabase invalida o refresh token a cada uso). Ele fica por dentro do `errorInterceptor`, então o aviso de sessão expirada só aparece se a renovação falhar.
-- **Guards de rota:** `authGuard` protege o layout inteiro e guarda a rota pedida para voltar depois do login; `moduloGuard` protege cada módulo e manda quem não tem acesso para o primeiro módulo liberado. A API também confere papel e acessos, então os guards são conveniência de navegação, não a barreira de segurança.
-- **Concorrência pelo HTTP:** a versão do produto vai no cabeçalho `If-Match`, como recomenda a especificação do HTTP, e também no corpo, por compatibilidade.
-
-## Deploy na Vercel
-
-1. Importe o repositório na Vercel.
-2. O preset **Angular** é detectado automaticamente. O `vercel.json` já define o comando de build, a pasta de saída e o redirecionamento das rotas para o `index.html`, para que recarregar a página em `/produtos` funcione.
+1. Importe o repositório na Vercel; o preset **Angular** é detectado.
+2. O `vercel.json` define build, pasta de saída e o redirecionamento das rotas para o `index.html`.
 3. Clique em **Deploy**.
 
-A API libera CORS para `https://productmoduleinterface*.vercel.app` e `https://product-module-interface*.vercel.app`. Se o painel for publicado em outro domínio, adicione-o à variável `CORS_ALLOWED_ORIGINS` do serviço da API no Render.
+A API libera CORS para `https://productmoduleinterface*.vercel.app` e `https://product-module-interface*.vercel.app`. Para outro domínio, adicione-o a `CORS_ALLOWED_ORIGINS` no Render.
 
-## Referências
+### Referências
 
-- [Angular](https://angular.dev/) e [Signals](https://angular.dev/guide/signals)
-- [Angular Material](https://material.angular.dev/) e [Material Design 3](https://m3.material.io/)
-- [Reactive Forms](https://angular.dev/guide/forms/reactive-forms)
+- [Angular](https://angular.dev/), [Signals](https://angular.dev/guide/signals), [Reactive Forms](https://angular.dev/guide/forms/reactive-forms), [HttpClient](https://angular.dev/guide/http) e [guards](https://angular.dev/guide/routing/route-guards)
+- [Angular Material](https://material.angular.dev/), [CDK Drag and Drop](https://material.angular.dev/cdk/drag-drop/overview) e [Material Design 3](https://m3.material.io/)
 - [Testes no Angular](https://angular.dev/guide/testing) e [Vitest](https://vitest.dev/)
-- [HttpClient e interceptors](https://angular.dev/guide/http) e [guards de rota](https://angular.dev/guide/routing/route-guards)
-- [Supabase Auth](https://supabase.com/docs/guides/auth) (usado pela API), [login com Google](https://supabase.com/docs/guides/auth/social-login/auth-google) e [fluxo PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow)
-- [RFC 7636: PKCE](https://www.rfc-editor.org/rfc/rfc7636)
-- [MDN: ETag e If-Match](https://developer.mozilla.org/docs/Web/HTTP/Headers/If-Match)
-- [RFC 9457: Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457)
-- [Vercel: deploy de projetos Angular](https://vercel.com/docs/frameworks/frontend/angular)
-- [GitHub Actions](https://docs.github.com/actions)
+- [Supabase Auth](https://supabase.com/docs/guides/auth), [login com Google](https://supabase.com/docs/guides/auth/social-login/auth-google), [PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow) e [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)
+- [MDN: If-Match](https://developer.mozilla.org/docs/Web/HTTP/Headers/If-Match) e [RFC 9457: Problem Details](https://www.rfc-editor.org/rfc/rfc9457)
+- [Vercel: Angular](https://vercel.com/docs/frameworks/frontend/angular) e [GitHub Actions](https://docs.github.com/actions)

@@ -1,0 +1,145 @@
+:host {
+  display: block;
+  padding-top: 16px;
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.campo-situacao {
+  width: 160px;
+}
+
+.campo-busca {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.campo-data {
+  width: 160px;
+}
+
+.espaco {
+  flex: 1;
+}
+
+.tabela {
+  overflow-x: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-raio);
+  background: var(--mat-sys-surface);
+  transition: opacity var(--app-transicao);
+
+  &.atualizando {
+    opacity: 0.6;
+  }
+
+  table {
+    width: 100%;
+    background: transparent;
+  }
+}
+
+.mat-mdc-row {
+  transition: background-color var(--app-transicao);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-low);
+  }
+}
+
+.data {
+  white-space: nowrap;
+
+  &.vencida {
+    color: var(--mat-sys-error);
+    font-weight: 500;
+  }
+}
+
+.descricao {
+  display: block;
+  font: var(--mat-sys-title-small);
+}
+
+.categoria {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.numero {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.secundario {
+  color: var(--mat-sys-on-surface-variant);
+
+  small {
+    font: var(--mat-sys-body-small);
+  }
+}
+
+.liquido {
+  font-weight: 500;
+}
+
+.situacao {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-highest);
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+
+  &[data-status='PAGO'],
+  &[data-status='RECEBIDO'] {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  &[data-status='VENCIDA'] {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  &[data-status='CANCELADO'] {
+    background: transparent;
+    color: var(--mat-sys-on-surface-variant);
+    text-decoration: line-through;
+  }
+}
+
+.acoes {
+  width: 96px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.vazio {
+  padding: 32px 16px;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+  }
+}

@@ -1,0 +1,68 @@
+<header class="cabecalho">
+  <h1>Financeiro</h1>
+  <p class="subtitulo">Contas a pagar e a receber. Os totais usam o valor líquido, já descontado o imposto.</p>
+</header>
+
+@if (erroNoResumo()) {
+  <div class="estado">
+    <p>Não foi possível carregar o resumo.</p>
+    <button mat-stroked-button type="button" (click)="carregarResumo()">Tentar novamente</button>
+  </div>
+} @else {
+  <section class="indicadores" aria-label="Resumo financeiro">
+    @if (resumo(); as resumo) {
+      <div class="indicador" [class.alerta]="resumo.contasAPagarVencidas > 0">
+        <mat-icon>call_made</mat-icon>
+        <span class="valor">{{ resumo.aPagar | currency }}</span>
+        <span class="rotulo">A pagar</span>
+        @if (resumo.contasAPagarVencidas > 0) {
+          <span class="detalhe">
+            {{ resumo.aPagarVencido | currency }} vencido em {{ resumo.contasAPagarVencidas }}
+            {{ resumo.contasAPagarVencidas === 1 ? 'conta' : 'contas' }}
+          </span>
+        }
+      </div>
+      <div class="indicador" [class.alerta]="resumo.contasAReceberVencidas > 0">
+        <mat-icon>call_received</mat-icon>
+        <span class="valor">{{ resumo.aReceber | currency }}</span>
+        <span class="rotulo">A receber</span>
+        @if (resumo.contasAReceberVencidas > 0) {
+          <span class="detalhe">
+            {{ resumo.aReceberVencido | currency }} em atraso em {{ resumo.contasAReceberVencidas }}
+            {{ resumo.contasAReceberVencidas === 1 ? 'conta' : 'contas' }}
+          </span>
+        }
+      </div>
+      <div class="indicador">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <span class="valor" [class.negativo]="resumo.saldoPrevisto < 0">{{ resumo.saldoPrevisto | currency }}</span>
+        <span class="rotulo">Saldo previsto (a receber - a pagar)</span>
+      </div>
+      <div class="indicador">
+        <mat-icon>calendar_month</mat-icon>
+        <span class="valor">{{ resumo.recebidoNoMes - resumo.pagoNoMes | currency }}</span>
+        <span class="rotulo">Resultado do mês</span>
+        <span class="detalhe">
+          Recebido {{ resumo.recebidoNoMes | currency }} · Pago {{ resumo.pagoNoMes | currency }}
+        </span>
+      </div>
+    } @else {
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="indicador"><div class="skeleton bloco"></div></div>
+      }
+    }
+  </section>
+}
+
+<mat-tab-group mat-stretch-tabs="false" animationDuration="150ms">
+  <mat-tab label="Contas a pagar">
+    <ng-template matTabContent>
+      <app-conta-lista tipo="contas-pagar" (alterou)="carregarResumo()" />
+    </ng-template>
+  </mat-tab>
+  <mat-tab label="Contas a receber">
+    <ng-template matTabContent>
+      <app-conta-lista tipo="contas-receber" (alterou)="carregarResumo()" />
+    </ng-template>
+  </mat-tab>
+</mat-tab-group>

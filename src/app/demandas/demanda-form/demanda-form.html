@@ -1,0 +1,136 @@
+<header class="cabecalho">
+  <h2 mat-dialog-title>{{ demanda ? 'Editar demanda' : 'Nova demanda' }}</h2>
+  <button mat-icon-button type="button" aria-label="Fechar" mat-dialog-close>
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
+  <mat-dialog-content class="formulario">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Título</mat-label>
+      <input matInput formControlName="titulo" maxlength="150" cdkFocusInitial />
+      <mat-error>{{ mensagemDeErro('titulo') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Descrição</mat-label>
+      <textarea matInput formControlName="descricao" rows="3" maxlength="5000"></textarea>
+      <mat-error>{{ mensagemDeErro('descricao') }}</mat-error>
+    </mat-form-field>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          @for (tipo of listaDeTipos; track tipo[0]) {
+            <mat-option [value]="tipo[0]">
+              <mat-icon>{{ tipo[1].icone }}</mat-icon>
+              {{ tipo[1].rotulo }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Urgência</mat-label>
+        <mat-select formControlName="urgencia">
+          @for (urgencia of listaDeUrgencias; track urgencia[0]) {
+            <mat-option [value]="urgencia[0]">{{ urgencia[1] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          @for (coluna of colunas; track coluna.status) {
+            <mat-option [value]="coluna.status">{{ coluna.rotulo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Prazo</mat-label>
+        <input matInput type="date" formControlName="prazo" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Responsáveis</mat-label>
+      <mat-select formControlName="responsaveis" multiple>
+        <mat-select-trigger>
+          <span class="escolhidos">
+            @for (id of escolhidos(); track id) {
+              @let pessoa = opcao(id);
+              <span class="chip-pessoa">
+                <app-avatar [nome]="pessoa?.nome ?? ''" [url]="pessoa?.avatarUrl" [tamanho]="20" />
+                {{ pessoa?.nome }}
+              </span>
+            }
+          </span>
+        </mat-select-trigger>
+        @for (pessoa of opcoes; track pessoa.id) {
+          <mat-option [value]="pessoa.id">
+            <span class="opcao-pessoa">
+              <app-avatar [nome]="pessoa.nome" [url]="pessoa.avatarUrl" [tamanho]="24" />
+              {{ pessoa.nome }}
+            </span>
+          </mat-option>
+        }
+      </mat-select>
+      <mat-hint>A demanda aparece em "Minhas tarefas" de cada responsável.</mat-hint>
+    </mat-form-field>
+
+    <fieldset class="checklist">
+      <legend>
+        Checklist
+        @if (progresso().total) {
+          <span class="progresso">{{ progresso().feitos }}/{{ progresso().total }}</span>
+        }
+      </legend>
+      <ul formArrayName="checklist">
+        @for (item of checklist.controls; track item; let i = $index) {
+          <li [formGroupName]="i">
+            <mat-checkbox formControlName="feito" [attr.aria-label]="'Concluir item ' + (i + 1)" />
+            <input class="texto-item" formControlName="texto" maxlength="200" [attr.aria-label]="'Item ' + (i + 1)" />
+            <button
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="'Remover item ' + (i + 1)"
+              matTooltip="Remover item"
+              (click)="removerItem(i)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </li>
+        }
+      </ul>
+      @if (checklist.length < maximoDeItens) {
+        <div class="novo-item">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Novo item</mat-label>
+            <input matInput [formControl]="novoItem" maxlength="200" (keydown.enter)="adicionarItem($event)" />
+          </mat-form-field>
+          <button mat-stroked-button type="button" (click)="adicionarItem()">Adicionar</button>
+        </div>
+      }
+    </fieldset>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="acoes">
+    @if (demanda && data.podeExcluir) {
+      <button mat-button type="button" class="excluir" (click)="excluir()">
+        <mat-icon>delete</mat-icon>
+        Excluir
+      </button>
+    }
+    <span class="espaco"></span>
+    <button mat-button type="button" mat-dialog-close>Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando...' : demanda ? 'Salvar alterações' : 'Criar demanda' }}
+    </button>
+  </mat-dialog-actions>
+</form>

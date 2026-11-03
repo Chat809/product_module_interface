@@ -59,6 +59,19 @@ describe('AuthService', () => {
     expect(auth.ehAdmin()).toBe(false);
   });
 
+  it('deve manter a foto do usuário quando o login não a trouxer', () => {
+    const anterior = sessaoDeTeste();
+    anterior.usuario.avatarUrl = 'https://exemplo.com/foto.png';
+    localStorage.setItem('painel.sessao', JSON.stringify(anterior));
+    const auth = criar();
+
+    auth.entrar('maria@exemplo.com', 'segredo1').subscribe();
+    controle.expectOne(`${url}/login`).flush(sessaoDeTeste('USUARIO', 'novo'));
+
+    expect(auth.token()).toBe('novo');
+    expect(auth.usuario()?.avatarUrl).toBe('https://exemplo.com/foto.png');
+  });
+
   it('deve ignorar uma sessão guardada corrompida', () => {
     localStorage.setItem('painel.sessao', '{nao-e-json');
     expect(criar().logado()).toBe(false);

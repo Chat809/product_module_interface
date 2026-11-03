@@ -23,10 +23,13 @@
       <ng-container matColumnDef="nome">
         <th mat-header-cell *matHeaderCellDef>Nome</th>
         <td mat-cell *matCellDef="let usuario">
-          <span class="nome">{{ usuario.nome }}</span>
-          @if (ehVoce(usuario)) {
-            <span class="voce">você</span>
-          }
+          <div class="pessoa">
+            <app-avatar [nome]="usuario.nome" [url]="usuario.avatarUrl" />
+            <span class="nome">{{ usuario.nome }}</span>
+            @if (ehVoce(usuario)) {
+              <span class="voce">você</span>
+            }
+          </div>
         </td>
       </ng-container>
 

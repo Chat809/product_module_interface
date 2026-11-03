@@ -43,6 +43,23 @@ export const routes: Routes = [
         loadComponent: () => import('./produtos/produto-list/produto-list').then((m) => m.ProdutoList),
       },
       {
+        path: 'demandas',
+        title: 'Demandas',
+        canActivate: [moduloGuard('demandas')],
+        loadComponent: () => import('./demandas/demanda-board/demanda-board').then((m) => m.DemandaBoard),
+      },
+      {
+        path: 'financeiro',
+        title: 'Financeiro',
+        canActivate: [moduloGuard('financeiro')],
+        loadComponent: () => import('./financeiro/financeiro-page/financeiro-page').then((m) => m.FinanceiroPage),
+      },
+      {
+        path: 'perfil',
+        title: 'Meu perfil',
+        loadComponent: () => import('./perfil/meu-perfil/meu-perfil').then((m) => m.MeuPerfilPage),
+      },
+      {
         path: 'usuarios',
         title: 'Usuários',
         canActivate: [moduloGuard('usuarios')],

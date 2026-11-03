@@ -46,6 +46,18 @@ describe('App (rotas)', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Nenhum módulo liberado');
   });
 
+  it('financeiro exige o módulo; Meu perfil abre para qualquer conta', async () => {
+    localStorage.setItem('painel.sessao', JSON.stringify(sessaoDeTeste('USUARIO', 'acesso', ['demandas'])));
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl('/financeiro');
+    expect(TestBed.inject(Router).url).toBe('/demandas');
+
+    await harness.navigateByUrl('/perfil');
+    expect(TestBed.inject(Router).url).toBe('/perfil');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Meu perfil');
+  });
+
   it('deve permitir abrir a tela de registro sem sessão', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/registro');

@@ -1,0 +1,138 @@
+<header class="cabecalho">
+  <h1>Meu perfil</h1>
+  <p class="subtitulo">Seus dados no painel e as demandas sob sua responsabilidade.</p>
+</header>
+
+@if (perfil(); as perfil) {
+  <div class="grade">
+    <section class="cartao identidade">
+      <app-avatar [nome]="perfil.nome" [url]="perfil.avatarUrl" [tamanho]="112" />
+      <div class="acoes-foto">
+        <input #arquivo type="file" hidden [accept]="tiposAceitos" (change)="escolherFoto($event)" />
+        <button mat-stroked-button type="button" [disabled]="enviandoFoto()" (click)="arquivo.click()">
+          <mat-icon>photo_camera</mat-icon>
+          {{ enviandoFoto() ? 'Enviando...' : perfil.avatarUrl ? 'Trocar foto' : 'Enviar foto' }}
+        </button>
+        @if (perfil.avatarUrl) {
+          <button
+            mat-icon-button
+            type="button"
+            matTooltip="Remover foto"
+            aria-label="Remover foto"
+            [disabled]="enviandoFoto()"
+            (click)="removerFoto()"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </div>
+      <p class="dica">PNG, JPG ou WebP com até 2 MB.</p>
+
+      <dl class="dados">
+        <dt>E-mail</dt>
+        <dd>{{ perfil.email }}</dd>
+        <dt>Cargo</dt>
+        <dd>
+          <span class="papel" [class.admin]="perfil.papel === 'ADMIN'">
+            {{ perfil.papel === 'ADMIN' ? 'Administrador' : 'Usuário' }}
+          </span>
+        </dd>
+        <dt>Acessos</dt>
+        <dd>{{ acessos(perfil) }}</dd>
+        @if (perfil.criadoEm) {
+          <dt>Conta criada em</dt>
+          <dd>{{ perfil.criadoEm | date: 'dd/MM/yyyy' }}</dd>
+        }
+      </dl>
+      <p class="dica">
+        <mat-icon>lock</mat-icon>
+        E-mail, cargo e acessos são alterados pelo administrador.
+      </p>
+    </section>
+
+    <section class="cartao">
+      <h2>Dados pessoais</h2>
+      <form [formGroup]="form" (ngSubmit)="salvar()" novalidate class="formulario">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="nome" maxlength="100" autocomplete="name" />
+          <mat-error>{{ mensagemDeErro('nome') }}</mat-error>
+        </mat-form-field>
+
+        <div class="linha">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="telefone" maxlength="20" autocomplete="tel" placeholder="(11) 91234-5678" />
+            <mat-error>{{ mensagemDeErro('telefone') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Função</mat-label>
+            <input matInput formControlName="funcao" maxlength="80" placeholder="Ex.: Compras" />
+            <mat-error>{{ mensagemDeErro('funcao') }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Bio</mat-label>
+          <textarea matInput formControlName="bio" rows="4" maxlength="500"></textarea>
+          <mat-hint align="end">{{ form.controls.bio.value.length }}/500</mat-hint>
+          <mat-error>{{ mensagemDeErro('bio') }}</mat-error>
+        </mat-form-field>
+
+        <div class="rodape">
+          <button mat-flat-button type="submit" [disabled]="salvando() || form.pristine">
+            {{ salvando() ? 'Salvando...' : 'Salvar alterações' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  @if (temDemandas) {
+    <section class="cartao tarefas">
+      <header>
+        <h2>Minhas tarefas</h2>
+        <a mat-button routerLink="/demandas">
+          Abrir quadro
+          <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+        </a>
+      </header>
+      @if (erroNasTarefas()) {
+        <div class="estado">
+          <p>Não foi possível carregar suas tarefas.</p>
+          <button mat-stroked-button type="button" (click)="carregarTarefas()">Tentar novamente</button>
+        </div>
+      } @else if (tarefas(); as tarefas) {
+        @for (tarefa of tarefas; track tarefa.id) {
+          <a class="tarefa" routerLink="/demandas" [queryParams]="{ abrir: tarefa.id }">
+            <mat-icon class="tipo" [matTooltip]="tipos[tarefa.tipo].rotulo">{{ tipos[tarefa.tipo].icone }}</mat-icon>
+            <span class="titulo">{{ tarefa.titulo }}</span>
+            <span class="selo status">{{ rotuloDoStatus(tarefa.status) }}</span>
+            <span class="selo-urgencia" [attr.data-urgencia]="tarefa.urgencia">{{ urgencias[tarefa.urgencia] }}</span>
+            @if (progresso(tarefa); as progresso) {
+              <span class="meta"><mat-icon>checklist</mat-icon>{{ progresso }}</span>
+            }
+            @if (tarefa.prazo) {
+              <span class="meta" [class.atrasada]="tarefa.atrasada">
+                <mat-icon>event</mat-icon>{{ tarefa.prazo | date: 'dd/MM' }}
+              </span>
+            }
+          </a>
+        } @empty {
+          <p class="vazio">Nenhuma demanda aberta com você como responsável.</p>
+        }
+      } @else {
+        <app-skeleton [linhas]="3" />
+      }
+    </section>
+  }
+} @else if (erroAoCarregar()) {
+  <div class="estado">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Não foi possível carregar o seu perfil.</p>
+    <button mat-stroked-button type="button" (click)="carregar()">Tentar novamente</button>
+  </div>
+} @else {
+  <app-skeleton [linhas]="4" />
+}

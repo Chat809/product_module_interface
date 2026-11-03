@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { Notificacao } from '../feedback/notificacao.service';
@@ -11,11 +11,17 @@ export interface ProblemDetail {
   erros?: { campo: string; mensagem: string }[];
 }
 
+/** Requisições feitas em segundo plano (por exemplo, atualizar o avatar no topo) falham sem mostrar aviso. */
+export const SEM_AVISO_DE_ERRO = new HttpContextToken<boolean>(() => false);
+
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notificacao = inject(Notificacao);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (req.context.get(SEM_AVISO_DE_ERRO)) {
+        return throwError(() => error);
+      }
       const problem = error.error as ProblemDetail | null;
       switch (error.status) {
         case 0:
@@ -43,6 +49,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           break;
         case 422:
           notificacao.aviso(problem?.detail ?? 'A operação não pôde ser concluída.');
+          break;
+        case 413:
+          notificacao.erro(problem?.detail ?? 'O arquivo enviado é grande demais.');
           break;
         case 400:
           notificacao.erro(

@@ -1,0 +1,144 @@
+<header class="cabecalho">
+  <div>
+    <h1>Demandas</h1>
+    <p class="subtitulo">Arraste os cartões entre as colunas para atualizar o andamento.</p>
+  </div>
+  <div class="acoes">
+    <button mat-stroked-button type="button" (click)="carregar()" [disabled]="carregando()">
+      <mat-icon>refresh</mat-icon>
+      Atualizar
+    </button>
+    <button mat-flat-button type="button" (click)="nova()">
+      <mat-icon>add</mat-icon>
+      Nova demanda
+    </button>
+  </div>
+</header>
+
+<div class="filtros">
+  <mat-button-toggle-group
+    hideSingleSelectionIndicator
+    aria-label="Quais demandas mostrar"
+    [value]="somenteMinhas()"
+    (change)="somenteMinhas.set($event.value)"
+  >
+    <mat-button-toggle [value]="false">Todas</mat-button-toggle>
+    <mat-button-toggle [value]="true">Só as minhas</mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-urgencia">
+    <mat-label>Urgência</mat-label>
+    <mat-select [value]="urgencia()" (selectionChange)="urgencia.set($event.value)">
+      <mat-option value="">Todas</mat-option>
+      @for (item of listaDeUrgencias; track item[0]) {
+        <mat-option [value]="item[0]">{{ item[1] }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-busca">
+    <mat-icon matPrefix>search</mat-icon>
+    <mat-label>Buscar</mat-label>
+    <input matInput [ngModel]="busca()" (ngModelChange)="busca.set($event)" placeholder="Título ou descrição" />
+  </mat-form-field>
+
+  @if (filtrando()) {
+    <button mat-button type="button" (click)="limparFiltros()">
+      <mat-icon>filter_alt_off</mat-icon>
+      Limpar filtros
+    </button>
+  }
+</div>
+
+@if (demandas() === null && erro()) {
+  <div class="estado">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Não foi possível carregar as demandas.</p>
+    <button mat-stroked-button type="button" (click)="carregar()">Tentar novamente</button>
+  </div>
+} @else if (demandas() === null) {
+  <app-skeleton [linhas]="4" />
+} @else {
+  <div class="quadro" cdkDropListGroup>
+    @for (coluna of colunas; track coluna.status) {
+      @let cartoes = visiveis().get(coluna.status) ?? [];
+      <section class="coluna" [attr.data-status]="coluna.status">
+        <header>
+          <mat-icon>{{ coluna.icone }}</mat-icon>
+          <h2>{{ coluna.rotulo }}</h2>
+          <span class="contagem">{{ cartoes.length }}</span>
+          <button
+            mat-icon-button
+            type="button"
+            class="adicionar"
+            [matTooltip]="'Nova demanda em ' + coluna.rotulo"
+            [attr.aria-label]="'Nova demanda em ' + coluna.rotulo"
+            (click)="nova(coluna.status)"
+          >
+            <mat-icon>add</mat-icon>
+          </button>
+        </header>
+
+        <div
+          class="lista"
+          cdkDropList
+          [cdkDropListData]="coluna.status"
+          (cdkDropListDropped)="soltar($event)"
+          [attr.aria-label]="'Coluna ' + coluna.rotulo"
+        >
+          @for (demanda of cartoes; track demanda.id) {
+            <article
+              class="cartao"
+              cdkDrag
+              [cdkDragData]="demanda"
+              tabindex="0"
+              (click)="editar(demanda)"
+              (keydown.enter)="editar(demanda)"
+              [attr.aria-label]="demanda.titulo"
+            >
+              <div class="cartao-placeholder" *cdkDragPlaceholder></div>
+              <div class="topo">
+                <mat-icon class="tipo" [matTooltip]="tipos[demanda.tipo].rotulo">{{ tipos[demanda.tipo].icone }}</mat-icon>
+                <span class="selo-urgencia" [attr.data-urgencia]="demanda.urgencia">{{ urgencias[demanda.urgencia] }}</span>
+              </div>
+              <h3>{{ demanda.titulo }}</h3>
+              @if (demanda.descricao) {
+                <p class="descricao">{{ demanda.descricao }}</p>
+              }
+              <footer>
+                @if (demanda.prazo) {
+                  <span
+                    class="meta"
+                    [class.atrasada]="demanda.atrasada"
+                    [matTooltip]="demanda.atrasada ? 'Prazo vencido' : 'Prazo'"
+                  >
+                    <mat-icon>{{ demanda.atrasada ? 'event_busy' : 'event' }}</mat-icon>
+                    {{ demanda.prazo | date: 'dd/MM' }}
+                  </span>
+                }
+                @if (progresso(demanda); as progresso) {
+                  <span class="meta" [class.completo]="progresso.feitos === progresso.total" matTooltip="Checklist">
+                    <mat-icon>checklist</mat-icon>
+                    {{ progresso.feitos }}/{{ progresso.total }}
+                  </span>
+                }
+                <span class="espaco"></span>
+                @let pessoas = responsaveis(demanda);
+                <span class="pessoas">
+                  @for (pessoa of pessoas.slice(0, maximoDeAvatares); track pessoa.id) {
+                    <app-avatar [nome]="pessoa.nome" [url]="pessoa.avatarUrl" [tamanho]="24" [comDica]="true" />
+                  }
+                  @if (pessoas.length > maximoDeAvatares) {
+                    <span class="mais">+{{ pessoas.length - maximoDeAvatares }}</span>
+                  }
+                </span>
+              </footer>
+            </article>
+          } @empty {
+            <p class="vazia">{{ filtrando() ? 'Nada com estes filtros' : 'Arraste um cartão para cá' }}</p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+}

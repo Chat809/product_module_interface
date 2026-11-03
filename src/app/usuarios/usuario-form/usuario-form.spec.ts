@@ -47,7 +47,7 @@ describe('UsuarioFormDialog', () => {
 
     expect(form.nome).toBe('Maria');
     expect(form.total).toBe(false);
-    expect(form.modulos).toEqual({ dashboard: true, produtos: false });
+    expect(form.modulos).toEqual({ dashboard: true, produtos: false, demandas: false, financeiro: false });
     expect(texto()).toContain('exclusivo de administradores');
   });
 

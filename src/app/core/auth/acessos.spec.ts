@@ -28,6 +28,8 @@ describe('acessos', () => {
     const antigo = { ...usuario('USUARIO', []), acessos: undefined } as unknown as Usuario;
     expect(podeAcessar(antigo, 'dashboard')).toBe(true);
     expect(podeAcessar(antigo, 'produtos')).toBe(true);
+    expect(podeAcessar(antigo, 'demandas')).toBe(true);
+    expect(podeAcessar(antigo, 'financeiro')).toBe(false);
     expect(podeAcessar(null, 'dashboard')).toBe(false);
   });
 
@@ -35,6 +37,7 @@ describe('acessos', () => {
     expect(descreverAcessos(usuario('ADMIN', ['*']))).toBe('Acesso total');
     expect(descreverAcessos(usuario('USUARIO', ['*']))).toBe('Acesso total');
     expect(descreverAcessos(usuario('USUARIO', ['produtos', 'dashboard']))).toBe('Dashboard, Produtos');
+    expect(descreverAcessos(usuario('USUARIO', ['financeiro', 'demandas']))).toBe('Demandas, Financeiro');
     expect(descreverAcessos(usuario('USUARIO', []))).toBe('Nenhum módulo');
   });
 });

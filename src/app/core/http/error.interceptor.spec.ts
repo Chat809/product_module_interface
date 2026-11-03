@@ -1,8 +1,8 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Notificacao } from '../feedback/notificacao.service';
-import { errorInterceptor } from './error.interceptor';
+import { SEM_AVISO_DE_ERRO, errorInterceptor } from './error.interceptor';
 
 describe('errorInterceptor', () => {
   let http: HttpClient;
@@ -77,6 +77,22 @@ describe('errorInterceptor', () => {
   it('deve exibir o detalhe da regra de negócio em 422', () => {
     falhar(422, { detail: 'Estoque insuficiente' });
     expect(notificacao.aviso).toHaveBeenCalledWith('Estoque insuficiente');
+  });
+
+  it('deve ficar em silêncio nas requisições marcadas como de segundo plano', () => {
+    let erroRecebido: unknown;
+    http
+      .get('/api/usuarios/me', { context: new HttpContext().set(SEM_AVISO_DE_ERRO, true) })
+      .subscribe({ error: (e) => (erroRecebido = e) });
+    controle.expectOne('/api/usuarios/me').flush(null, { status: 503, statusText: 'Erro' });
+
+    expect(erroRecebido).toBeDefined();
+    expect(notificacao.erro).not.toHaveBeenCalled();
+  });
+
+  it('deve exibir o limite de tamanho em 413', () => {
+    falhar(413, { detail: 'A imagem deve ter no máximo 2 MB' });
+    expect(notificacao.erro).toHaveBeenCalledWith('A imagem deve ter no máximo 2 MB');
   });
 
   it('deve usar uma mensagem genérica quando a API não enviar detalhe e repassar o erro', () => {

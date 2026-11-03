@@ -144,7 +144,12 @@ export class AuthService {
     this.documento.location.assign(url);
   }
 
+  /** Login e renovação não trazem a foto; ela é mantida da sessão anterior do mesmo usuário. */
   private guardar(sessao: Sessao): void {
+    const anterior = this.sessao()?.usuario;
+    if (sessao.usuario.avatarUrl === undefined && anterior?.id === sessao.usuario.id) {
+      sessao = { ...sessao, usuario: { ...sessao.usuario, avatarUrl: anterior.avatarUrl } };
+    }
     this.sessao.set(sessao);
     localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
   }

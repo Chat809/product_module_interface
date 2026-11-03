@@ -12,6 +12,7 @@ import { ACESSO_TOTAL, MODULOS } from '../../core/auth/acessos';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
+import { Avatar } from '../../shared/avatar/avatar';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { SenhaDialog } from '../senha-dialog/senha-dialog';
 import { ROTULOS_PAPEL, UsuarioFormData, UsuarioFormDialog } from '../usuario-form/usuario-form';
@@ -19,7 +20,16 @@ import { UsuarioService } from '../usuario.service';
 
 @Component({
   selector: 'app-usuario-list',
-  imports: [DatePipe, MatButtonModule, MatIconModule, MatPaginatorModule, MatTableModule, MatTooltipModule, Skeleton],
+  imports: [
+    Avatar,
+    DatePipe,
+    MatButtonModule,
+    MatIconModule,
+    MatPaginatorModule,
+    MatTableModule,
+    MatTooltipModule,
+    Skeleton,
+  ],
   templateUrl: './usuario-list.html',
   styleUrl: './usuario-list.scss',
 })

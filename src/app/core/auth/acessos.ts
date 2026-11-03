@@ -3,7 +3,7 @@ import { Modulo, Usuario } from './auth.model';
 export const ACESSO_TOTAL = '*';
 
 /** Contas novas e sessões salvas antes da coluna `acessos` existir recebem este padrão, como na API. */
-export const ACESSOS_PADRAO: Modulo[] = ['dashboard', 'produtos'];
+export const ACESSOS_PADRAO: Modulo[] = ['dashboard', 'produtos', 'demandas'];
 
 export interface DefinicaoDeModulo {
   chave: Modulo;
@@ -17,6 +17,8 @@ export interface DefinicaoDeModulo {
 export const MODULOS: DefinicaoDeModulo[] = [
   { chave: 'dashboard', rotulo: 'Dashboard', icone: 'dashboard', rota: '/dashboard', somenteAdmin: false },
   { chave: 'produtos', rotulo: 'Produtos', icone: 'inventory_2', rota: '/produtos', somenteAdmin: false },
+  { chave: 'demandas', rotulo: 'Demandas', icone: 'view_kanban', rota: '/demandas', somenteAdmin: false },
+  { chave: 'financeiro', rotulo: 'Financeiro', icone: 'payments', rota: '/financeiro', somenteAdmin: false },
   { chave: 'usuarios', rotulo: 'Usuários', icone: 'group', rota: '/usuarios', somenteAdmin: true },
 ];
 
