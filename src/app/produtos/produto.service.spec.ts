@@ -75,12 +75,21 @@ describe('ProdutoService', () => {
     req.flush(produto);
   });
 
-  it('deve atualizar um produto com PUT enviando a versão', () => {
+  it('deve atualizar um produto com PUT enviando a versão no corpo e no If-Match', () => {
     service.atualizar(id, { ...request, versao: 0 }).subscribe();
 
     const req = http.expectOne(`${url}/${id}`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ ...request, versao: 0 });
+    expect(req.request.headers.get('If-Match')).toBe('"0"');
+    req.flush(produto);
+  });
+
+  it('não deve enviar If-Match quando não houver versão', () => {
+    service.atualizar(id, request).subscribe();
+
+    const req = http.expectOne(`${url}/${id}`);
+    expect(req.request.headers.has('If-Match')).toBe(false);
     req.flush(produto);
   });
 

@@ -33,8 +33,11 @@ export class ProdutoService {
     return this.http.post<Produto>(this.url, produto);
   }
 
+  /** A versão vai também no If-Match, para a API recusar com 409 se o produto mudou desde a leitura. */
   atualizar(id: string, produto: ProdutoRequest): Observable<Produto> {
-    return this.http.put<Produto>(`${this.url}/${id}`, produto);
+    const headers: Record<string, string> =
+      produto.versao == null ? {} : { 'If-Match': `"${produto.versao}"` };
+    return this.http.put<Produto>(`${this.url}/${id}`, produto, { headers });
   }
 
   remover(id: string): Observable<void> {
