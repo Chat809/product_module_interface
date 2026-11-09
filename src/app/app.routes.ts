@@ -145,6 +145,13 @@ export const routes: Routes = [
             canActivate: [subabaGuard('configuracoes/parametros-crm')],
             loadComponent: () => import('./configuracoes/parametros-crm/parametros-crm').then((m) => m.ParametrosCrm),
           },
+          {
+            path: 'notificacoes',
+            title: 'Notificações',
+            canActivate: [subabaGuard('configuracoes/notificacoes')],
+            loadComponent: () =>
+              import('./configuracoes/notificacoes/preferencias-notificacao').then((m) => m.PreferenciasNotificacaoPage),
+          },
         ],
       },
       {

@@ -10,6 +10,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
+import { SinoNotificacoes } from '../../notificacoes/sino-notificacoes';
 import { PerfilService } from '../../perfil/perfil.service';
 import { Avatar } from '../../shared/avatar/avatar';
 import { ROTULOS_PAPEL, descreverAcessos } from '../auth/acessos';
@@ -31,6 +32,7 @@ import { Tema } from '../tema/tema.service';
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
+    SinoNotificacoes,
   ],
   template: `
     <mat-toolbar class="toolbar">
@@ -52,6 +54,7 @@ import { Tema } from '../tema/tema.service';
       >
         <mat-icon>{{ tema.escuro() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
+      <app-sino-notificacoes />
       @if (auth.usuario(); as usuario) {
         <button
           mat-button
