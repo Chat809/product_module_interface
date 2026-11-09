@@ -23,6 +23,9 @@ import {
   calcularImposto,
   formatarDocumento,
 } from '../financeiro.model';
+import { FinanceiroService } from '../financeiro.service';
+import { CrmService } from '../../crm/crm.service';
+import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
 interface OpcaoVinculo {
   id: string;
@@ -30,8 +33,6 @@ interface OpcaoVinculo {
   documento: string | null;
   chavePix: string | null;
 }
-import { FinanceiroService } from '../financeiro.service';
-import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
 /** Sem conta, o diálogo lança; com conta, edita. */
 export interface ContaFormData {
@@ -111,6 +112,7 @@ function textoOuNulo(valor: string): string | null {
 })
 export class ContaFormDialog {
   private readonly financeiroService = inject(FinanceiroService);
+  private readonly crmService = inject(CrmService);
   private readonly dialogRef = inject<MatDialogRef<ContaFormDialog, Conta>>(MatDialogRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -203,7 +205,9 @@ export class ContaFormDialog {
 
   /** Clientes do CRM para as contas a receber. */
   private opcoesDeClientes(): Observable<OpcaoVinculo[]> {
-    return of([]);
+    return this.crmService
+      .opcoesDeClientes()
+      .pipe(map((lista) => lista.map((c) => ({ id: c.id, nome: c.nome, documento: c.documento, chavePix: null }))));
   }
 
   protected salvar(): void {

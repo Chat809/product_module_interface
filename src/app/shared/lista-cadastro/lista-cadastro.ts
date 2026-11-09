@@ -151,9 +151,11 @@ export function paramsDe(filtro: FiltroCadastro, pagina: number, tamanho: number
                 <button mat-icon-button type="button" matTooltip="Editar" aria-label="Editar" (click)="editar.emit(item)">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button mat-icon-button type="button" matTooltip="Excluir" aria-label="Excluir" (click)="excluir.emit(item)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                @if (podeExcluir()) {
+                  <button mat-icon-button type="button" matTooltip="Excluir" aria-label="Excluir" (click)="excluir.emit(item)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
               }
             </td>
           </ng-container>
@@ -261,6 +263,7 @@ export class ListaCadastro<T> implements OnInit {
   readonly colunas = input.required<ColunaCadastro<T>[]>();
   readonly fonte = input.required<FonteCadastro<T>>();
   readonly podeEditar = input(true);
+  readonly podeExcluir = input(true);
   readonly podeAbrir = input(false);
   readonly filtrarAtivos = input(true);
   readonly acoesExtras = input<AcaoCadastro<T>[]>([]);

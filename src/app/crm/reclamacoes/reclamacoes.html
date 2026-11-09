@@ -1,0 +1,153 @@
+<ng-template #alternarModo>
+  <mat-button-toggle-group
+    hideSingleSelectionIndicator
+    aria-label="Visualização"
+    [value]="modo()"
+    (change)="mudarModo($event.value)"
+  >
+    <mat-button-toggle value="lista" matTooltip="Lista">
+      <mat-icon>view_list</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="quadro" matTooltip="Quadro">
+      <mat-icon>view_kanban</mat-icon>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+</ng-template>
+
+<ng-template #filtroResponsavel>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-filtro">
+    <mat-label>Responsável</mat-label>
+    <mat-select
+      [value]="responsavelFiltro()"
+      (selectionChange)="responsavelFiltro.set($event.value); modo() === 'lista' && filtrarLista()"
+    >
+      <mat-option [value]="null">Todos</mat-option>
+      @for (pessoa of responsaveis(); track pessoa.id) {
+        <mat-option [value]="pessoa.id">{{ pessoa.nome }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</ng-template>
+
+@if (modo() === 'lista') {
+  <app-lista-cadastro
+    titulo="Reclamações"
+    subtitulo="Cada reclamação recebe um protocolo e guarda o histórico de status e comentários."
+    rotuloNovo="Nova reclamação"
+    rotuloBusca="Buscar por protocolo, assunto ou contato"
+    vazio="Nenhuma reclamação registrada."
+    [colunas]="colunas()"
+    [fonte]="fonte"
+    [podeAbrir]="true"
+    [podeExcluir]="false"
+    [filtrarAtivos]="false"
+    (novo)="nova()"
+    (abrir)="abrir($event)"
+    (editar)="editar($event)"
+  >
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-filtro">
+      <mat-label>Status</mat-label>
+      <mat-select [value]="statusFiltro()" (selectionChange)="statusFiltro.set($event.value); filtrarLista()">
+        <mat-option [value]="null">Todos</mat-option>
+        @for (coluna of colunasDoQuadro; track coluna.status) {
+          <mat-option [value]="coluna.status">{{ coluna.rotulo }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <ng-container [ngTemplateOutlet]="filtroResponsavel" />
+    <ng-container [ngTemplateOutlet]="alternarModo" />
+  </app-lista-cadastro>
+} @else {
+  <header class="cabecalho">
+    <div>
+      <h1>Reclamações</h1>
+      <p class="subtitulo">Arraste os cards para mudar o status. Resolver pede a descrição da solução.</p>
+    </div>
+    <div class="acoes">
+      <button mat-stroked-button type="button" (click)="carregarQuadro()" [disabled]="carregando()">
+        <mat-icon>refresh</mat-icon>
+        Atualizar
+      </button>
+      <button mat-flat-button type="button" (click)="nova()">
+        <mat-icon>add</mat-icon>
+        Nova reclamação
+      </button>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-busca">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar</mat-label>
+      <input matInput [ngModel]="busca()" (ngModelChange)="busca.set($event)" placeholder="Protocolo, assunto ou cliente" />
+    </mat-form-field>
+    <ng-container [ngTemplateOutlet]="filtroResponsavel" />
+    <ng-container [ngTemplateOutlet]="alternarModo" />
+  </div>
+
+  @if (reclamacoes() === null && erro()) {
+    <div class="estado">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Não foi possível carregar as reclamações.</p>
+      <button mat-stroked-button type="button" (click)="carregarQuadro()">Tentar novamente</button>
+    </div>
+  } @else if (reclamacoes() === null) {
+    <app-skeleton [linhas]="4" />
+  } @else {
+    <div class="quadro" cdkDropListGroup [style.--colunas]="colunasDoQuadro.length">
+      @for (coluna of colunasDoQuadro; track coluna.status) {
+        @let cartoes = visiveis().get(coluna.status) ?? [];
+        <section class="coluna" [style.--cor]="'var(--mat-sys-outline)'">
+          <header>
+            <mat-icon>{{ coluna.icone }}</mat-icon>
+            <div class="titulo-coluna">
+              <h2>{{ coluna.rotulo }}</h2>
+            </div>
+            <span class="contagem">{{ cartoes.length }}</span>
+          </header>
+          <div
+            class="lista"
+            cdkDropList
+            [cdkDropListData]="coluna.status"
+            (cdkDropListDropped)="soltar($event)"
+            [attr.aria-label]="'Coluna ' + coluna.rotulo"
+          >
+            @for (r of cartoes; track r.id) {
+              <article
+                class="cartao"
+                cdkDrag
+                [cdkDragData]="r"
+                tabindex="0"
+                (click)="abrir(r)"
+                (keydown.enter)="abrir(r)"
+                [attr.aria-label]="r.protocolo + ' ' + r.assunto"
+              >
+                <div class="cartao-placeholder" *cdkDragPlaceholder></div>
+                <div class="topo">
+                  <span>{{ r.protocolo }}</span>
+                  <span class="prioridade" [attr.data-prioridade]="r.prioridade">{{ prioridades[r.prioridade] }}</span>
+                </div>
+                <h3>{{ r.assunto }}</h3>
+                <p class="empresa">{{ r.cliente?.nome ?? r.nomeContato }}</p>
+                <footer>
+                  @if (r.prazo) {
+                    <span class="meta" [class.atrasada]="atrasada(r)" [matTooltip]="atrasada(r) ? 'Prazo vencido' : 'Prazo'">
+                      <mat-icon>{{ atrasada(r) ? 'event_busy' : 'event' }}</mat-icon>
+                      {{ r.prazo | date: 'dd/MM' }}
+                    </span>
+                  }
+                  <span class="espaco"></span>
+                  @if (responsavel(r); as pessoa) {
+                    <app-avatar [nome]="pessoa.nome" [url]="pessoa.avatarUrl" [tamanho]="24" [comDica]="true" />
+                  }
+                </footer>
+              </article>
+            } @empty {
+              <p class="vazia">Nenhuma reclamação</p>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+}

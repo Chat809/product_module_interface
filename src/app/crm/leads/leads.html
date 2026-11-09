@@ -1,0 +1,169 @@
+<ng-template #alternarModo>
+  <mat-button-toggle-group
+    hideSingleSelectionIndicator
+    aria-label="Visualização"
+    [value]="modo()"
+    (change)="mudarModo($event.value)"
+  >
+    <mat-button-toggle value="lista" matTooltip="Lista">
+      <mat-icon>view_list</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="funil" matTooltip="Funil">
+      <mat-icon>view_kanban</mat-icon>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+</ng-template>
+
+<ng-template #filtroResponsavel>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-filtro">
+    <mat-label>Responsável</mat-label>
+    <mat-select
+      [value]="responsavelFiltro()"
+      (selectionChange)="responsavelFiltro.set($event.value); modo() === 'lista' && filtrarLista()"
+    >
+      <mat-option [value]="null">Todos</mat-option>
+      @for (pessoa of responsaveis(); track pessoa.id) {
+        <mat-option [value]="pessoa.id">{{ pessoa.nome }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</ng-template>
+
+@if (modo() === 'lista') {
+  <app-lista-cadastro
+    titulo="Leads"
+    subtitulo="Oportunidades em negociação. Converta em cliente quando o negócio for fechado."
+    rotuloNovo="Novo lead"
+    rotuloBusca="Buscar por nome, empresa, e-mail ou telefone"
+    vazio="Nenhum lead cadastrado ainda."
+    [colunas]="colunas()"
+    [fonte]="fonte"
+    [podeAbrir]="true"
+    [filtrarAtivos]="false"
+    [acoesExtras]="acoes"
+    (novo)="novo()"
+    (abrir)="abrir($event)"
+    (editar)="editar($event)"
+    (excluir)="excluir($event)"
+  >
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-filtro">
+      <mat-label>Etapa</mat-label>
+      <mat-select [value]="etapaFiltro()" (selectionChange)="etapaFiltro.set($event.value); filtrarLista()">
+        <mat-option [value]="null">Todas</mat-option>
+        @for (etapa of etapas(); track etapa.id) {
+          <mat-option [value]="etapa.id">{{ etapa.nome }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <ng-container [ngTemplateOutlet]="filtroResponsavel" />
+    <ng-container [ngTemplateOutlet]="alternarModo" />
+  </app-lista-cadastro>
+} @else {
+  <header class="cabecalho">
+    <div>
+      <h1>Leads</h1>
+      <p class="subtitulo">Arraste os cards entre as etapas do funil.</p>
+    </div>
+    <div class="acoes">
+      <button mat-stroked-button type="button" (click)="carregarFunil()" [disabled]="carregando()">
+        <mat-icon>refresh</mat-icon>
+        Atualizar
+      </button>
+      <button mat-flat-button type="button" (click)="novo()">
+        <mat-icon>add</mat-icon>
+        Novo lead
+      </button>
+    </div>
+  </header>
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-busca">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar</mat-label>
+      <input matInput [ngModel]="busca()" (ngModelChange)="busca.set($event)" placeholder="Nome, empresa ou e-mail" />
+    </mat-form-field>
+    <ng-container [ngTemplateOutlet]="filtroResponsavel" />
+    <ng-container [ngTemplateOutlet]="alternarModo" />
+  </div>
+
+  @if (leads() === null && erro()) {
+    <div class="estado">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Não foi possível carregar o funil.</p>
+      <button mat-stroked-button type="button" (click)="carregarFunil()">Tentar novamente</button>
+    </div>
+  } @else if (leads() === null) {
+    <app-skeleton [linhas]="4" />
+  } @else {
+    <div class="quadro" cdkDropListGroup [style.--colunas]="etapasAtivas().length">
+      @for (etapa of etapasAtivas(); track etapa.id) {
+        @let cartoes = visiveis().get(etapa.id) ?? [];
+        <section class="coluna" [style.--cor]="etapa.cor">
+          <header>
+            <span class="marcador"></span>
+            <div class="titulo-coluna">
+              <h2>{{ etapa.nome }}</h2>
+              <span class="total">{{ totalDa(etapa) | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+            </div>
+            <span class="contagem">{{ cartoes.length }}</span>
+            <button
+              mat-icon-button
+              type="button"
+              class="adicionar"
+              [matTooltip]="'Novo lead em ' + etapa.nome"
+              [attr.aria-label]="'Novo lead em ' + etapa.nome"
+              (click)="novo(etapa)"
+            >
+              <mat-icon>add</mat-icon>
+            </button>
+          </header>
+          <div
+            class="lista"
+            cdkDropList
+            [cdkDropListData]="etapa"
+            (cdkDropListDropped)="soltar($event)"
+            [attr.aria-label]="'Etapa ' + etapa.nome"
+          >
+            @for (lead of cartoes; track lead.id) {
+              <article
+                class="cartao"
+                cdkDrag
+                [cdkDragData]="lead"
+                tabindex="0"
+                (click)="abrir(lead)"
+                (keydown.enter)="abrir(lead)"
+                [attr.aria-label]="lead.nome"
+              >
+                <div class="cartao-placeholder" *cdkDragPlaceholder></div>
+                <h3>{{ lead.nome }}</h3>
+                @if (lead.empresa) {
+                  <p class="empresa">{{ lead.empresa }}</p>
+                }
+                <footer>
+                  @if (lead.valorEstimado !== null) {
+                    <span class="meta">{{ lead.valorEstimado | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+                  }
+                  @if (lead.proximaAcaoEm) {
+                    <span class="meta" [class.atrasada]="atrasado(lead)" [matTooltip]="lead.proximaAcao ?? 'Próxima ação'">
+                      <mat-icon>{{ atrasado(lead) ? 'event_busy' : 'event' }}</mat-icon>
+                      {{ lead.proximaAcaoEm | date: 'dd/MM' }}
+                    </span>
+                  }
+                  @if (lead.clienteId) {
+                    <span class="meta cliente" matTooltip="Já é cliente"><mat-icon>how_to_reg</mat-icon></span>
+                  }
+                  <span class="espaco"></span>
+                  @if (responsavel(lead); as pessoa) {
+                    <app-avatar [nome]="pessoa.nome" [url]="pessoa.avatarUrl" [tamanho]="24" [comDica]="true" />
+                  }
+                </footer>
+              </article>
+            } @empty {
+              <p class="vazia">Arraste um card para cá</p>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+}

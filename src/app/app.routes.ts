@@ -106,6 +106,30 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'crm',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('crm') },
+          {
+            path: 'clientes',
+            title: 'Clientes',
+            canActivate: [subabaGuard('crm/clientes')],
+            loadComponent: () => import('./crm/clientes/clientes').then((m) => m.Clientes),
+          },
+          {
+            path: 'leads',
+            title: 'Leads',
+            canActivate: [subabaGuard('crm/leads')],
+            loadComponent: () => import('./crm/leads/leads').then((m) => m.Leads),
+          },
+          {
+            path: 'reclamacoes',
+            title: 'Reclamações',
+            canActivate: [subabaGuard('crm/reclamacoes')],
+            loadComponent: () => import('./crm/reclamacoes/reclamacoes').then((m) => m.Reclamacoes),
+          },
+        ],
+      },
+      {
         path: 'configuracoes',
         children: [
           { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('configuracoes') },
@@ -114,6 +138,12 @@ export const routes: Routes = [
             title: 'Usuários e acessos',
             canActivate: [subabaGuard('configuracoes/usuarios')],
             loadComponent: () => import('./usuarios/usuario-list/usuario-list').then((m) => m.UsuarioList),
+          },
+          {
+            path: 'parametros-crm',
+            title: 'Parâmetros do CRM',
+            canActivate: [subabaGuard('configuracoes/parametros-crm')],
+            loadComponent: () => import('./configuracoes/parametros-crm/parametros-crm').then((m) => m.ParametrosCrm),
           },
         ],
       },
