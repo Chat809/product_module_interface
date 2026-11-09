@@ -91,6 +91,18 @@ export const routes: Routes = [
             canActivate: [subabaGuard('financeiro/contas-receber')],
             loadComponent: () => import('./financeiro/financeiro-page/financeiro-page').then((m) => m.FinanceiroPage),
           },
+          {
+            path: 'fornecedores',
+            title: 'Fornecedores',
+            canActivate: [subabaGuard('financeiro/fornecedores')],
+            loadComponent: () => import('./financeiro/fornecedores/fornecedores').then((m) => m.Fornecedores),
+          },
+          {
+            path: 'centros-custo',
+            title: 'Centros de custo',
+            canActivate: [subabaGuard('financeiro/centros-custo')],
+            loadComponent: () => import('./financeiro/centros-custo/centros-custo').then((m) => m.CentrosCusto),
+          },
         ],
       },
       {

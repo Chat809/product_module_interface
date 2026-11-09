@@ -10,7 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { finalize } from 'rxjs';
+import { Observable, catchError, finalize, map, of } from 'rxjs';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { SomenteNumeros } from '../../shared/somente-numeros/somente-numeros';
 import {
@@ -21,7 +21,15 @@ import {
   TIPOS_DE_CONTA,
   TipoConta,
   calcularImposto,
+  formatarDocumento,
 } from '../financeiro.model';
+
+interface OpcaoVinculo {
+  id: string;
+  nome: string;
+  documento: string | null;
+  chavePix: string | null;
+}
 import { FinanceiroService } from '../financeiro.service';
 import { PROVEDORES_DE_DATA } from '../../shared/datas/data-iso.adapter';
 
@@ -133,6 +141,27 @@ export class ContaFormDialog {
     formaPagamento: [this.conta?.formaPagamento ?? ('PIX' as FormaPagamento)],
     chavePix: [this.conta?.chavePix ?? '', VALIDADORES_DA_CHAVE],
     observacoes: [this.conta?.observacoes ?? '', [Validators.maxLength(1000)]],
+    vinculoId: this.fb.control<string | null>(this.conta?.vinculoId ?? null),
+    centroCustoId: this.fb.control<string | null>(this.conta?.centroCustoId ?? null),
+  });
+
+  /** Fornecedores (a pagar) ou clientes (a receber) ativos para vincular à conta. */
+  protected readonly vinculos = toSignal(
+    (this.tipo === 'contas-pagar'
+      ? this.financeiroService
+          .opcoesDeFornecedores()
+          .pipe(
+            map((lista) =>
+              lista.map((f) => ({ id: f.id, nome: f.razaoSocial, documento: f.documento, chavePix: f.chavePix })),
+            ),
+          )
+      : this.opcoesDeClientes()
+    ).pipe(catchError(() => of([] as OpcaoVinculo[]))),
+    { initialValue: [] as OpcaoVinculo[] },
+  );
+
+  protected readonly centros = toSignal(this.financeiroService.opcoesDeCentros().pipe(catchError(() => of([]))), {
+    initialValue: [],
   });
 
   protected readonly forma = toSignal(this.form.controls.formaPagamento.valueChanges, {
@@ -156,6 +185,25 @@ export class ContaFormDialog {
       this.form.controls.chavePix.setValidators([Validators.maxLength(140)]);
       this.form.controls.chavePix.updateValueAndValidity();
     }
+    this.form.controls.vinculoId.valueChanges.pipe(takeUntilDestroyed()).subscribe((id) => {
+      const escolhido = this.vinculos().find((v) => v.id === id);
+      if (!escolhido) {
+        return;
+      }
+      const { pessoa, documento, chavePix } = this.form.controls;
+      pessoa.setValue(escolhido.nome);
+      if (!documento.value && escolhido.documento) {
+        documento.setValue(formatarDocumento(escolhido.documento) ?? '');
+      }
+      if (!chavePix.value && escolhido.chavePix) {
+        chavePix.setValue(escolhido.chavePix);
+      }
+    });
+  }
+
+  /** Clientes do CRM para as contas a receber. */
+  private opcoesDeClientes(): Observable<OpcaoVinculo[]> {
+    return of([]);
   }
 
   protected salvar(): void {
@@ -175,6 +223,8 @@ export class ContaFormDialog {
       formaPagamento: valor.formaPagamento,
       chavePix: valor.formaPagamento === 'PIX' ? textoOuNulo(valor.chavePix) : null,
       observacoes: textoOuNulo(valor.observacoes),
+      vinculoId: valor.vinculoId,
+      centroCustoId: valor.centroCustoId,
     };
     this.salvando.set(true);
     const requisicao = this.conta

@@ -17,6 +17,29 @@
 
     <div class="linha">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ tipo === 'contas-pagar' ? 'Fornecedor cadastrado' : 'Cliente cadastrado' }} (opcional)</mat-label>
+        <mat-select formControlName="vinculoId">
+          <mat-option [value]="null">— Nenhum —</mat-option>
+          @for (opcao of vinculos(); track opcao.id) {
+            <mat-option [value]="opcao.id">{{ opcao.nome }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Preenche nome, documento e Pix automaticamente</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Centro de custo (opcional)</mat-label>
+        <mat-select formControlName="centroCustoId">
+          <mat-option [value]="null">— Nenhum —</mat-option>
+          @for (centro of centros(); track centro.id) {
+            <mat-option [value]="centro.id">{{ centro.codigo }} · {{ centro.nome }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ dados.pessoa }}</mat-label>
         <input matInput formControlName="pessoa" maxlength="150" />
         <mat-hint>{{ dados.dicaPessoa }}</mat-hint>

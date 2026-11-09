@@ -24,6 +24,47 @@ export interface Conta {
   criadoPor: string | null;
   criadoEm: string | null;
   atualizadoEm: string | null;
+  /** Fornecedor (a pagar) ou cliente (a receber) cadastrado. */
+  vinculoId: string | null;
+  centroCustoId: string | null;
+}
+
+export interface Fornecedor {
+  id: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  documento: string | null;
+  contato: string | null;
+  email: string | null;
+  telefone: string | null;
+  chavePix: string | null;
+  categoria: string | null;
+  observacoes: string | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface CentroCusto {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+}
+
+/** CPF (11 dígitos) ou CNPJ (14) com a pontuação de costume. */
+export function formatarDocumento(documento: string | null | undefined): string | null {
+  if (!documento) {
+    return null;
+  }
+  if (documento.length === 11) {
+    return documento.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+  if (documento.length === 14) {
+    return documento.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  return documento;
 }
 
 /** Espelha o ContaRequestDTO da API. */
@@ -38,6 +79,8 @@ export interface ContaRequest {
   formaPagamento: FormaPagamento;
   chavePix: string | null;
   observacoes: string | null;
+  vinculoId: string | null;
+  centroCustoId: string | null;
 }
 
 /** Espelha o ResumoFinanceiroDTO: totais pelo valor líquido. */
