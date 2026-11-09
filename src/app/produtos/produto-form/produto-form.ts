@@ -1,18 +1,21 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
-import { filter, finalize, merge } from 'rxjs';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { catchError, filter, finalize, merge, of } from 'rxjs';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { SomenteNumeros } from '../../shared/somente-numeros/somente-numeros';
-import { Produto, ProdutoRequest } from '../produto.model';
+import { Produto, ProdutoRequest, UNIDADES, UnidadeMedida } from '../produto.model';
 import { ProdutoService } from '../produto.service';
 import { ProdutoStore } from '../produto.store';
 
@@ -21,10 +24,16 @@ export interface ProdutoFormData {
   produto?: Produto;
 }
 
-type Campo = 'nome' | 'descricao' | 'preco' | 'quantidadeEmEstoque';
+type Campo = 'codigo' | 'nome' | 'descricao' | 'categoria' | 'preco' | 'custo' | 'quantidadeEmEstoque';
 
 /** Mensagens por validador, na mesma linguagem e com as mesmas regras da API. */
 const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
+  codigo: [['pattern', 'Até 40 letras, números ou . _ / -, começando por letra ou número']],
+  categoria: [['maxlength', 'A categoria deve ter no máximo 60 caracteres']],
+  custo: [
+    ['min', 'O custo não pode ser negativo'],
+    ['pattern', 'Use no máximo 10 dígitos inteiros e 2 casas decimais'],
+  ],
   nome: [
     ['required', 'O nome é obrigatório'],
     ['pattern', 'O nome é obrigatório'],
@@ -47,11 +56,14 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
   selector: 'app-produto-form-dialog',
   imports: [
     ReactiveFormsModule,
+    MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatSelectModule,
+    MatSlideToggleModule,
     SomenteNumeros,
   ],
   templateUrl: './produto-form.html',
@@ -70,7 +82,20 @@ export class ProdutoFormDialog {
   protected readonly editando = this.produto !== undefined;
   protected readonly salvando = signal(false);
 
+  protected readonly unidades = UNIDADES;
+  protected readonly categorias = toSignal(this.produtoService.categorias().pipe(catchError(() => of([]))), {
+    initialValue: [] as string[],
+  });
+
   protected readonly form = this.fb.group({
+    codigo: [this.produto?.codigo ?? '', Validators.pattern(/^\s*([A-Za-z0-9][A-Za-z0-9._/-]{0,39})?\s*$/)],
+    categoria: [this.produto?.categoria ?? '', Validators.maxLength(60)],
+    unidade: this.fb.control<UnidadeMedida>(this.produto?.unidade ?? 'UN'),
+    custo: this.fb.control<number | null>(this.produto?.custo ?? null, [
+      Validators.min(0),
+      Validators.pattern(/^\d{1,10}(\.\d{1,2})?$/),
+    ]),
+    ativo: [this.produto?.ativo ?? true],
     nome: [
       this.produto?.nome ?? '',
       [Validators.required, Validators.maxLength(120), Validators.pattern(/\S/)],
@@ -125,10 +150,15 @@ export class ProdutoFormDialog {
 
     const valor = this.form.getRawValue();
     const dados: ProdutoRequest = {
+      codigo: valor.codigo.trim().toUpperCase() || null,
       nome: valor.nome,
       descricao: valor.descricao || null,
+      categoria: valor.categoria.trim() || null,
+      unidade: valor.unidade,
       preco: valor.preco as number,
+      custo: valor.custo ?? null,
       quantidadeEmEstoque: valor.quantidadeEmEstoque as number,
+      ativo: valor.ativo,
     };
     const requisicao = this.produto
       ? this.produtoService.atualizar(this.produto.id, { ...dados, versao: this.produto.versao })
@@ -167,6 +197,12 @@ export class ProdutoFormDialog {
   }
 
   private tratarErro(erro: HttpErrorResponse): void {
+    const problema = erro.error as ProblemDetail | null;
+    if (erro.status === 409 && problema?.title === 'Código já cadastrado') {
+      this.form.controls.codigo.setErrors({ api: problema.detail ?? 'Código já cadastrado' });
+      this.form.markAllAsTouched();
+      return;
+    }
     if (this.produto && (erro.status === 409 || erro.status === 404)) {
       // O produto mudou ou sumiu na API: sincroniza o catálogo e fecha, já que os dados do formulário estão defasados.
       this.store.carregar(true);

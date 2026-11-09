@@ -54,6 +54,10 @@ export class ProdutoService {
     });
   }
 
+  categorias(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.url}/categorias`);
+  }
+
   resumo(): Observable<ResumoEstoque> {
     return this.http.get<ResumoEstoque>(`${this.url}/resumo`);
   }

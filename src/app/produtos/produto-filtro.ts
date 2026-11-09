@@ -40,7 +40,9 @@ export function termosDaBusca(busca: string): string[] {
 export function indexar(produtos: Produto[]): ProdutoIndexado[] {
   return produtos.map((produto) => ({
     produto,
-    chave: normalizar(`${produto.nome} ${produto.descricao ?? ''}`),
+    chave: normalizar(
+      `${produto.nome} ${produto.descricao ?? ''} ${produto.codigo ?? ''} ${produto.categoria ?? ''}`,
+    ),
   }));
 }
 

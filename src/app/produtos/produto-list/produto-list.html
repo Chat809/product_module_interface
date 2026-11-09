@@ -12,7 +12,7 @@
 <section class="filtros">
   <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
     <mat-icon matPrefix>search</mat-icon>
-    <mat-label>Buscar por nome ou descrição</mat-label>
+    <mat-label>Buscar por nome, descrição, código ou categoria</mat-label>
     <input matInput #campoBusca [value]="busca()" (input)="buscar(campoBusca.value)" />
     @if (busca()) {
       <button matSuffix mat-icon-button aria-label="Limpar busca" (click)="buscar('')">
@@ -97,6 +97,14 @@
               @if (trecho.destaque) {<mark class="destaque">{{ trecho.texto }}</mark>} @else {{{ trecho.texto }}}
             }
           </span>
+          @if (produto.codigo || produto.categoria || !produto.ativo) {
+            <span class="descricao">
+              @if (produto.codigo) {<strong>{{ produto.codigo }}</strong>}
+              @if (produto.codigo && produto.categoria) { · }
+              {{ produto.categoria }}
+              @if (!produto.ativo) {<strong> · Inativo</strong>}
+            </span>
+          }
           @if (produto.descricao) {
             <span class="descricao">
               @for (trecho of produto.descricao | destaque: termos(); track $index) {

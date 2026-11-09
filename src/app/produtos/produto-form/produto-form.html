@@ -7,6 +7,25 @@
 
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
   <mat-dialog-content class="formulario">
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Código / SKU (opcional)</mat-label>
+        <input matInput formControlName="codigo" maxlength="40" placeholder="Ex.: PER-001" />
+        <mat-error>{{ mensagemDeErro('codigo') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Categoria (opcional)</mat-label>
+        <input matInput formControlName="categoria" maxlength="60" [matAutocomplete]="listaCategorias" />
+        <mat-autocomplete #listaCategorias="matAutocomplete">
+          @for (categoria of categorias(); track categoria) {
+            <mat-option [value]="categoria">{{ categoria }}</mat-option>
+          }
+        </mat-autocomplete>
+        <mat-error>{{ mensagemDeErro('categoria') }}</mat-error>
+      </mat-form-field>
+    </div>
+
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Nome</mat-label>
       <input matInput formControlName="nome" maxlength="120" cdkFocusInitial />
@@ -37,6 +56,23 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Custo (R$, opcional)</mat-label>
+        <input matInput type="number" formControlName="custo" appSomenteNumeros decimal min="0" step="0.01" />
+        <mat-error>{{ mensagemDeErro('custo') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="linha">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Unidade</mat-label>
+        <mat-select formControlName="unidade">
+          @for (unidade of unidades; track unidade.valor) {
+            <mat-option [value]="unidade.valor">{{ unidade.rotulo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Quantidade em estoque</mat-label>
         <input
           matInput
@@ -49,6 +85,10 @@
         <mat-error>{{ mensagemDeErro('quantidadeEmEstoque') }}</mat-error>
       </mat-form-field>
     </div>
+
+    <mat-slide-toggle formControlName="ativo">
+      Produto ativo (inativos ficam fora dos indicadores do dashboard)
+    </mat-slide-toggle>
 
     @if (editando) {
       <p class="dica">
