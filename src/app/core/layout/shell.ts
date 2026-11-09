@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,20 +8,14 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { map } from 'rxjs';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 import { PerfilService } from '../../perfil/perfil.service';
 import { Avatar } from '../../shared/avatar/avatar';
 import { ROTULOS_PAPEL, descreverAcessos } from '../auth/acessos';
-import { Usuario } from '../auth/auth.model';
+import { Modulo, Usuario } from '../auth/auth.model';
 import { AuthService } from '../auth/auth.service';
 import { Tema } from '../tema/tema.service';
-
-interface ItemDeMenu {
-  rota: string;
-  rotulo: string;
-  icone: string;
-}
 
 @Component({
   selector: 'app-shell',
@@ -106,18 +100,34 @@ interface ItemDeMenu {
         fixedTopGap="64"
       >
         <mat-nav-list>
-          @for (item of itens(); track item.rota) {
-            <a
-              mat-list-item
-              [routerLink]="item.rota"
-              routerLinkActive
-              #ativo="routerLinkActive"
-              [activated]="ativo.isActive"
-              (click)="celular() && menu.close()"
+          @for (modulo of auth.menu(); track modulo.chave) {
+            <button
+              type="button"
+              class="grupo"
+              [class.atual]="moduloAtual() === modulo.chave"
+              [attr.aria-expanded]="aberto(modulo.chave)"
+              (click)="alternar(modulo.chave)"
             >
-              <mat-icon matListItemIcon>{{ item.icone }}</mat-icon>
-              <span matListItemTitle>{{ item.rotulo }}</span>
-            </a>
+              <mat-icon>{{ modulo.icone }}</mat-icon>
+              <span class="grupo-rotulo">{{ modulo.rotulo }}</span>
+              <mat-icon class="seta">{{ aberto(modulo.chave) ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+            @if (aberto(modulo.chave)) {
+              @for (subaba of modulo.subabas; track subaba.chave) {
+                <a
+                  mat-list-item
+                  class="subaba"
+                  [routerLink]="subaba.rota"
+                  routerLinkActive
+                  #ativo="routerLinkActive"
+                  [activated]="ativo.isActive"
+                  (click)="celular() && menu.close()"
+                >
+                  <mat-icon matListItemIcon>{{ subaba.icone }}</mat-icon>
+                  <span matListItemTitle>{{ subaba.rotulo }}</span>
+                </a>
+              }
+            }
           }
         </mat-nav-list>
       </mat-sidenav>
@@ -241,6 +251,44 @@ interface ItemDeMenu {
       transition: background-color var(--app-transicao);
     }
 
+    .grupo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      margin-top: 4px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 999px;
+      background: none;
+      color: var(--mat-sys-on-surface);
+      font: var(--mat-sys-label-large);
+      text-align: left;
+      cursor: pointer;
+      transition: background-color var(--app-transicao);
+
+      &:hover {
+        background: var(--mat-sys-surface-container-high);
+      }
+
+      &.atual {
+        color: var(--mat-sys-primary);
+      }
+    }
+
+    .grupo-rotulo {
+      flex: 1;
+    }
+
+    .seta {
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .menu a.subaba {
+      height: 40px;
+      padding-left: 28px;
+    }
+
     .conteudo {
       box-sizing: border-box;
       max-width: 1200px;
@@ -268,9 +316,34 @@ export class Shell implements OnInit {
     return [usuario.funcao, usuario.departamento].filter(Boolean).join(' · ');
   }
 
-  protected readonly itens = computed<ItemDeMenu[]>(() =>
-    this.auth.modulosLiberados().map(({ rota, rotulo, icone }) => ({ rota, rotulo, icone })),
+  private readonly url = toSignal(
+    inject(Router).events.pipe(
+      filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd),
+      map((evento) => evento.urlAfterRedirects),
+      startWith(inject(Router).url),
+    ),
+    { initialValue: '' },
   );
+
+  /** Módulo da rota atual, que fica sempre aberto no menu. */
+  protected readonly moduloAtual = computed(() => this.url().split(/[/?#]/)[1] ?? '');
+  private readonly gruposAbertos = signal<ReadonlySet<string>>(new Set());
+
+  protected aberto(modulo: Modulo): boolean {
+    return this.gruposAbertos().has(modulo) !== (this.moduloAtual() === modulo);
+  }
+
+  protected alternar(modulo: Modulo): void {
+    this.gruposAbertos.update((abertos) => {
+      const novo = new Set(abertos);
+      if (novo.has(modulo)) {
+        novo.delete(modulo);
+      } else {
+        novo.add(modulo);
+      }
+      return novo;
+    });
+  }
 
   protected readonly celular = toSignal(
     inject(BreakpointObserver)

@@ -105,7 +105,7 @@ export class Registro {
       .subscribe({
         next: (usuario) => {
           this.notificacao.sucesso(`Conta criada. Bem-vindo, ${usuario.nome.split(' ')[0]}!`);
-          this.router.navigateByUrl('/dashboard');
+          this.router.navigateByUrl('/');
         },
         error: (erro: HttpErrorResponse | TimeoutError) => {
           if (erro instanceof TimeoutError) {

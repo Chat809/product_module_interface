@@ -1,9 +1,12 @@
 export type Papel = 'ADMIN' | 'USUARIO';
 
-/** Módulos do painel, com as mesmas chaves gravadas na coluna `acessos` do perfil. */
-export type Modulo = 'dashboard' | 'produtos' | 'demandas' | 'financeiro' | 'usuarios';
+/** Módulos (grupos do menu), com as mesmas chaves do enum Modulo da API. */
+export type Modulo = 'inicio' | 'estoque' | 'demandas' | 'financeiro' | 'crm' | 'relatorios' | 'configuracoes';
 
-/** Espelha o UsuarioDTO da API. `acessos` traz `'*'` (todos) ou as chaves dos módulos liberados. */
+/** Subabas, no formato `modulo/subaba` gravado na coluna `acessos` do perfil. */
+export type ChaveSubaba = `${Modulo}/${string}`;
+
+/** Espelha o UsuarioDTO da API. `acessos` traz `'*'` (todos) ou as chaves das subabas liberadas. */
 export interface Usuario {
   id: string;
   nome: string;

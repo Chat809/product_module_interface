@@ -8,7 +8,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter, finalize, switchMap } from 'rxjs';
-import { ACESSO_TOTAL, MODULOS, ROTULOS_PAPEL } from '../../core/auth/acessos';
+import { ROTULOS_PAPEL, rotulosDosAcessos } from '../../core/auth/acessos';
 import { Usuario } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
@@ -88,10 +88,7 @@ export class UsuarioList implements OnInit {
 
   /** Rótulos dos acessos para os chips da tabela; `*` e administradores aparecem como "Acesso total". */
   protected acessos(usuario: Usuario): string[] {
-    if (usuario.papel === 'ADMIN' || usuario.acessos.includes(ACESSO_TOTAL)) {
-      return ['Acesso total'];
-    }
-    return MODULOS.filter((m) => usuario.acessos.includes(m.chave)).map((m) => m.rotulo);
+    return rotulosDosAcessos(usuario);
   }
 
   protected novo(): void {

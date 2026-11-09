@@ -107,19 +107,37 @@
         </p>
       } @else {
         <mat-checkbox formControlName="total">Acesso total (<code>*</code>)</mat-checkbox>
-        <div class="modulos" formGroupName="modulos">
+        <div class="arvore">
           @for (modulo of modulos; track modulo.chave) {
-            @if (total()) {
-              <mat-checkbox [checked]="true" disabled>{{ modulo.rotulo }}</mat-checkbox>
-            } @else {
-              <mat-checkbox [formControlName]="modulo.chave">{{ modulo.rotulo }}</mat-checkbox>
-            }
+            <div class="ramo">
+              <mat-checkbox
+                [disabled]="total()"
+                [checked]="total() || marcadasDo(modulo) === modulo.subabas.length"
+                [indeterminate]="!total() && marcadasDo(modulo) > 0 && marcadasDo(modulo) < modulo.subabas.length"
+                (change)="marcarModulo(modulo, $event.checked)"
+              >
+                <strong>{{ modulo.rotulo }}</strong>
+              </mat-checkbox>
+              @if (modulo.subabas.length > 1) {
+                <div class="folhas">
+                  @for (subaba of modulo.subabas; track subaba.chave) {
+                    <mat-checkbox
+                      [disabled]="total()"
+                      [checked]="total() || marcadas().has(subaba.chave)"
+                      (change)="marcarSubaba(subaba.chave, $event.checked)"
+                    >
+                      {{ subaba.rotulo }}
+                    </mat-checkbox>
+                  }
+                </div>
+              }
+            </div>
           }
         </div>
         <p class="dica">
           <mat-icon>info</mat-icon>
-          O módulo Usuários é exclusivo de administradores. Sem nenhum módulo marcado, a pessoa entra mas não vê
-          nenhuma área do painel.
+          Usuários e acessos, Parâmetros do CRM, Webhooks e Integrações são exclusivos de administradores, e Notificações
+          vale para todos. Sem nada marcado, a pessoa entra mas não vê nenhuma área do painel.
         </p>
       }
     </fieldset>

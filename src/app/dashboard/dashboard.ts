@@ -24,7 +24,7 @@ export class Dashboard implements OnInit {
   private readonly dialogs = inject(ProdutoDialogs);
   protected readonly store = inject(ProdutoStore);
   /** Quem só tem o dashboard vê os números, mas não registra entradas nem abre o catálogo. */
-  protected readonly gerenciaProdutos = inject(AuthService).podeAcessar('produtos');
+  protected readonly gerenciaProdutos = inject(AuthService).podeAcessar('estoque/produtos');
 
   protected readonly resumo = signal<ResumoEstoque | null>(null);
   protected readonly erroNoResumo = signal(false);

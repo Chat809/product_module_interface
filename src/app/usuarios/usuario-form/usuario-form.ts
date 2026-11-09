@@ -12,8 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Observable, finalize } from 'rxjs';
-import { ACESSO_TOTAL, MODULOS, ROTULOS_PAPEL } from '../../core/auth/acessos';
-import { Modulo, Papel, Usuario } from '../../core/auth/auth.model';
+import { ACESSOS_PADRAO, ACESSO_TOTAL, DefinicaoDeModulo, MODULOS, ROTULOS_PAPEL, podeAcessar } from '../../core/auth/acessos';
+import { ChaveSubaba, Papel, Usuario } from '../../core/auth/auth.model';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { TAMANHO_MAXIMO_AVATAR, TIPOS_DE_AVATAR } from '../../perfil/perfil.service';
@@ -33,7 +33,7 @@ const NOVO_USUARIO: Usuario = {
   nome: '',
   email: '',
   papel: 'USUARIO',
-  acessos: ['dashboard', 'produtos', 'demandas'],
+  acessos: ACESSOS_PADRAO,
   criadoEm: null,
 };
 
@@ -108,8 +108,11 @@ export class UsuarioFormDialog {
   protected readonly senhaVisivel = signal(false);
   protected readonly papeis: Papel[] = ['USUARIO', 'ADMIN'];
   protected readonly rotulos = ROTULOS_PAPEL;
-  /** O módulo de usuários não entra na lista: ele vem do papel ADMIN. */
-  protected readonly modulos = MODULOS.filter((m) => !m.somenteAdmin);
+  /** Subabas de administrador e as livres (Notificações) não entram na lista: vêm do papel ou valem para todos. */
+  protected readonly modulos: DefinicaoDeModulo[] = MODULOS.map((m) => ({
+    ...m,
+    subabas: m.subabas.filter((s) => !s.somenteAdmin && !s.livre),
+  })).filter((m) => m.subabas.length > 0);
   protected readonly tiposAceitos = TIPOS_DE_AVATAR.join(',');
   protected readonly salvando = signal(false);
   protected readonly enviandoFoto = signal(false);
@@ -126,13 +129,38 @@ export class UsuarioFormDialog {
     funcao: [this.usuario.funcao ?? '', [Validators.maxLength(80)]],
     papel: [{ value: this.usuario.papel, disabled: this.ehVoce }],
     total: [this.usuario.acessos.includes(ACESSO_TOTAL)],
-    modulos: this.fb.group(
-      Object.fromEntries(this.modulos.map((m) => [m.chave, this.usuario.acessos.includes(m.chave)])) as Record<
-        Modulo,
-        boolean
-      >,
-    ),
   });
+
+  /** Subabas marcadas; chaves de módulo e chaves antigas gravadas no perfil já chegam expandidas. */
+  protected readonly marcadas = signal<ReadonlySet<ChaveSubaba>>(
+    new Set(
+      this.modulos
+        .flatMap((m) => m.subabas)
+        .filter((s) => podeAcessar({ ...this.usuario, papel: 'USUARIO' }, s.chave) && !this.usuario.acessos.includes(ACESSO_TOTAL))
+        .map((s) => s.chave),
+    ),
+  );
+
+  protected marcadasDo(modulo: DefinicaoDeModulo): number {
+    return modulo.subabas.filter((s) => this.marcadas().has(s.chave)).length;
+  }
+
+  protected marcarModulo(modulo: DefinicaoDeModulo, marcar: boolean): void {
+    this.alterarMarcadas(modulo.subabas.map((s) => s.chave), marcar);
+  }
+
+  protected marcarSubaba(chave: ChaveSubaba, marcar: boolean): void {
+    this.alterarMarcadas([chave], marcar);
+  }
+
+  private alterarMarcadas(chaves: ChaveSubaba[], marcar: boolean): void {
+    this.marcadas.update((atuais) => {
+      const novas = new Set(atuais);
+      chaves.forEach((chave) => (marcar ? novas.add(chave) : novas.delete(chave)));
+      return novas;
+    });
+    this.form.markAsDirty();
+  }
 
   protected readonly papel = toSignal(this.form.controls.papel.valueChanges, {
     initialValue: this.usuario.papel,
@@ -209,13 +237,13 @@ export class UsuarioFormDialog {
     return erros['api'] ?? MENSAGENS[campo].find(([validador]) => erros[validador])?.[1] ?? 'Valor inválido';
   }
 
-  /** Mesma forma que a API grava: `['*']` ou os módulos marcados, na ordem do menu. */
+  /** Mesma forma que a API grava: `['*']` ou as subabas marcadas, na ordem do menu. */
   private acessosEscolhidos(): string[] {
-    const { papel, total, modulos } = this.form.getRawValue();
+    const { papel, total } = this.form.getRawValue();
     if (papel === 'ADMIN' || total) {
       return [ACESSO_TOTAL];
     }
-    return this.modulos.filter((m) => modulos[m.chave]).map((m) => m.chave);
+    return this.modulos.flatMap((m) => m.subabas.filter((s) => this.marcadas().has(s.chave)).map((s) => s.chave));
   }
 
   private trocarFoto(requisicao: Observable<Usuario>, mensagem: string): void {

@@ -1,10 +1,17 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { authGuard, moduloGuard, visitanteGuard } from './core/auth/auth.guards';
+import { authGuard, subabaGuard, visitanteGuard } from './core/auth/auth.guards';
+import { Modulo } from './core/auth/auth.model';
 import { AuthService } from './core/auth/auth.service';
 import { Shell } from './core/layout/shell';
 
 const rotaInicial = () => inject(AuthService).rotaInicial();
+
+/** Abrir só o módulo (`/financeiro`) leva à primeira subaba dele que a pessoa pode usar. */
+const primeiraSubaba = (modulo: Modulo) => () => {
+  const auth = inject(AuthService);
+  return auth.menu().find((m) => m.chave === modulo)?.subabas[0]?.rota ?? auth.rotaInicial();
+};
 
 export const routes: Routes = [
   {
@@ -31,28 +38,72 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: rotaInicial },
       {
-        path: 'dashboard',
-        title: 'Dashboard',
-        canActivate: [moduloGuard('dashboard')],
-        loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
+        path: 'inicio',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('inicio') },
+          {
+            path: 'dashboard',
+            title: 'Dashboard',
+            canActivate: [subabaGuard('inicio/dashboard')],
+            loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
+          },
+        ],
       },
       {
-        path: 'produtos',
-        title: 'Produtos',
-        canActivate: [moduloGuard('produtos')],
-        loadComponent: () => import('./produtos/produto-list/produto-list').then((m) => m.ProdutoList),
+        path: 'estoque',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('estoque') },
+          {
+            path: 'produtos',
+            title: 'Produtos',
+            canActivate: [subabaGuard('estoque/produtos')],
+            loadComponent: () => import('./produtos/produto-list/produto-list').then((m) => m.ProdutoList),
+          },
+        ],
       },
       {
         path: 'demandas',
-        title: 'Demandas',
-        canActivate: [moduloGuard('demandas')],
-        loadComponent: () => import('./demandas/demanda-board/demanda-board').then((m) => m.DemandaBoard),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('demandas') },
+          {
+            path: 'quadro',
+            title: 'Demandas',
+            canActivate: [subabaGuard('demandas/quadro')],
+            loadComponent: () => import('./demandas/demanda-board/demanda-board').then((m) => m.DemandaBoard),
+          },
+        ],
       },
       {
         path: 'financeiro',
-        title: 'Financeiro',
-        canActivate: [moduloGuard('financeiro')],
-        loadComponent: () => import('./financeiro/financeiro-page/financeiro-page').then((m) => m.FinanceiroPage),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('financeiro') },
+          {
+            path: 'contas-pagar',
+            title: 'Contas a pagar',
+            data: { tipo: 'contas-pagar' },
+            canActivate: [subabaGuard('financeiro/contas-pagar')],
+            loadComponent: () => import('./financeiro/financeiro-page/financeiro-page').then((m) => m.FinanceiroPage),
+          },
+          {
+            path: 'contas-receber',
+            title: 'Contas a receber',
+            data: { tipo: 'contas-receber' },
+            canActivate: [subabaGuard('financeiro/contas-receber')],
+            loadComponent: () => import('./financeiro/financeiro-page/financeiro-page').then((m) => m.FinanceiroPage),
+          },
+        ],
+      },
+      {
+        path: 'configuracoes',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('configuracoes') },
+          {
+            path: 'usuarios',
+            title: 'Usuários e acessos',
+            canActivate: [subabaGuard('configuracoes/usuarios')],
+            loadComponent: () => import('./usuarios/usuario-list/usuario-list').then((m) => m.UsuarioList),
+          },
+        ],
       },
       {
         path: 'perfil',
@@ -60,16 +111,13 @@ export const routes: Routes = [
         loadComponent: () => import('./perfil/meu-perfil/meu-perfil').then((m) => m.MeuPerfilPage),
       },
       {
-        path: 'usuarios',
-        title: 'Usuários',
-        canActivate: [moduloGuard('usuarios')],
-        loadComponent: () => import('./usuarios/usuario-list/usuario-list').then((m) => m.UsuarioList),
-      },
-      {
         path: 'sem-acesso',
         title: 'Sem acesso',
         loadComponent: () => import('./core/layout/sem-acesso').then((m) => m.SemAcesso),
       },
+      { path: 'dashboard', redirectTo: 'inicio/dashboard' },
+      { path: 'produtos', redirectTo: 'estoque/produtos' },
+      { path: 'usuarios', redirectTo: 'configuracoes/usuarios' },
     ],
   },
   { path: '**', redirectTo: '' },

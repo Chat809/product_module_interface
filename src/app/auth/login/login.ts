@@ -71,7 +71,7 @@ export class Login {
       .subscribe({
         next: (usuario) => {
           this.notificacao.sucesso(`Olá, ${usuario.nome.split(' ')[0]}!`);
-          this.router.navigateByUrl(this.voltar() || '/dashboard');
+          this.router.navigateByUrl(this.voltar() || '/');
         },
         error: (erro: HttpErrorResponse | TimeoutError) => {
           if (erro instanceof TimeoutError) {

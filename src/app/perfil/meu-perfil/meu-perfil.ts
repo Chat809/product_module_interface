@@ -64,7 +64,7 @@ export class MeuPerfilPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(NonNullableFormBuilder);
 
-  protected readonly temDemandas = this.auth.podeAcessar('demandas');
+  protected readonly temDemandas = this.auth.podeAcessar('demandas/quadro');
   protected readonly urgencias = URGENCIAS;
   protected readonly tipos = TIPOS;
   protected readonly rotuloDoStatus = rotuloDoStatus;

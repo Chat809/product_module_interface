@@ -54,15 +54,5 @@
   </section>
 }
 
-<mat-tab-group mat-stretch-tabs="false" animationDuration="150ms">
-  <mat-tab label="Contas a pagar">
-    <ng-template matTabContent>
-      <app-conta-lista tipo="contas-pagar" (alterou)="carregarResumo()" />
-    </ng-template>
-  </mat-tab>
-  <mat-tab label="Contas a receber">
-    <ng-template matTabContent>
-      <app-conta-lista tipo="contas-receber" (alterou)="carregarResumo()" />
-    </ng-template>
-  </mat-tab>
-</mat-tab-group>
+<h2 class="titulo-lista">{{ tipo === 'contas-pagar' ? 'Contas a pagar' : 'Contas a receber' }}</h2>
+<app-conta-lista [tipo]="tipo" (alterou)="carregarResumo()" />

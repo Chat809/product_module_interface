@@ -4,8 +4,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, finalize, map, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { MODULOS, podeAcessar } from './acessos';
-import { Modulo, Sessao, Usuario } from './auth.model';
+import { menuDe, podeAcessar } from './acessos';
+import { ChaveSubaba, Sessao, Usuario } from './auth.model';
 import { ROTA_RETORNO_GOOGLE, desafioDe, gerarVerificador, urlDoGoogle } from './google';
 
 const CHAVE_SESSAO = 'painel.sessao';
@@ -43,15 +43,16 @@ export class AuthService {
   readonly usuario = computed(() => this.sessao()?.usuario ?? null);
   readonly logado = computed(() => this.sessao() !== null);
   readonly ehAdmin = computed(() => this.usuario()?.papel === 'ADMIN');
-  readonly modulosLiberados = computed(() => MODULOS.filter((m) => podeAcessar(this.usuario(), m.chave)));
+  /** Módulos do menu, cada um só com as subabas que a pessoa pode abrir. */
+  readonly menu = computed(() => menuDe(this.usuario()));
 
-  podeAcessar(modulo: Modulo): boolean {
-    return podeAcessar(this.usuario(), modulo);
+  podeAcessar(subaba: ChaveSubaba): boolean {
+    return podeAcessar(this.usuario(), subaba);
   }
 
-  /** Primeiro módulo liberado, para onde vão a raiz e as rotas proibidas. */
+  /** Primeira subaba liberada, para onde vão a raiz e as rotas proibidas. */
   rotaInicial(): string {
-    return this.modulosLiberados()[0]?.rota ?? '/sem-acesso';
+    return this.menu()[0]?.subabas[0]?.rota ?? '/sem-acesso';
   }
 
   /** Mantém a sessão em dia quando o admin edita a própria conta na tela de usuários. */

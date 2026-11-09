@@ -87,7 +87,7 @@
     <section class="cartao tarefas">
       <header>
         <h2>Minhas tarefas</h2>
-        <a mat-button routerLink="/demandas">
+        <a mat-button routerLink="/demandas/quadro">
           Abrir quadro
           <mat-icon iconPositionEnd>arrow_forward</mat-icon>
         </a>
@@ -99,7 +99,7 @@
         </div>
       } @else if (tarefas(); as tarefas) {
         @for (tarefa of tarefas; track tarefa.id) {
-          <a class="tarefa" routerLink="/demandas" [queryParams]="{ abrir: tarefa.id }">
+          <a class="tarefa" routerLink="/demandas/quadro" [queryParams]="{ abrir: tarefa.id }">
             <mat-icon class="tipo" [matTooltip]="tipos[tarefa.tipo].rotulo">{{ tipos[tarefa.tipo].icone }}</mat-icon>
             <span class="titulo">{{ tarefa.titulo }}</span>
             <span class="selo status">{{ rotuloDoStatus(tarefa.status) }}</span>
