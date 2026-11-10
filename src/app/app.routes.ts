@@ -152,6 +152,18 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./configuracoes/notificacoes/preferencias-notificacao').then((m) => m.PreferenciasNotificacaoPage),
           },
+          {
+            path: 'webhooks',
+            title: 'Webhooks',
+            canActivate: [subabaGuard('configuracoes/webhooks')],
+            loadComponent: () => import('./configuracoes/webhooks/webhooks').then((m) => m.Webhooks),
+          },
+          {
+            path: 'integracoes',
+            title: 'Integrações',
+            canActivate: [subabaGuard('configuracoes/integracoes')],
+            loadComponent: () => import('./configuracoes/integracoes/integracoes').then((m) => m.Integracoes),
+          },
         ],
       },
       {

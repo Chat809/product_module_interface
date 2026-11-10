@@ -1,0 +1,192 @@
+<header class="cabecalho">
+  <h1>Webhooks</h1>
+  <p class="subtitulo">Conecte o painel a outros sistemas: avise sobre eventos e receba leads automaticamente.</p>
+</header>
+
+@if (revelado(); as r) {
+  <section class="revelado" role="status">
+    <div class="revelado-topo">
+      <h2>
+        <mat-icon>key</mat-icon>
+        {{ r.titulo }}
+      </h2>
+      <button mat-icon-button type="button" aria-label="Fechar" (click)="revelado.set(null)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="valor">
+      <code>{{ r.valor }}</code>
+      <button mat-stroked-button type="button" (click)="copiar(r.valor)">
+        <mat-icon>content_copy</mat-icon>
+        Copiar
+      </button>
+    </div>
+    <p>{{ r.explicacao }}</p>
+  </section>
+}
+
+<mat-tab-group animationDuration="0ms" mat-stretch-tabs="false">
+  <mat-tab label="Saída">
+    <div class="aba">
+      <div class="barra">
+        <p>Cada evento escolhido gera um POST assinado; falhas são repetidas até 3 vezes.</p>
+        <button mat-flat-button type="button" (click)="editarSaida()">
+          <mat-icon>add</mat-icon>
+          Novo webhook
+        </button>
+      </div>
+      @if (saidas() === null) {
+        <app-skeleton [linhas]="3" />
+      } @else {
+        <ul class="lista">
+          @for (w of saidas(); track w.id) {
+            <li [class.inativo]="!w.ativo">
+              <div class="info">
+                <strong>{{ w.nome }}{{ w.ativo ? '' : ' (inativo)' }}</strong>
+                <span class="url">{{ w.url }}</span>
+                <span class="chips">
+                  @for (e of w.eventos; track e) {
+                    <span class="chip">{{ descricoes[e] ?? e }}</span>
+                  }
+                </span>
+                <small>Segredo: <code>{{ w.segredo }}</code></small>
+              </div>
+              <div class="acoes">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="testando() === w.id"
+                  (click)="testar(w)"
+                >
+                  <mat-icon>send</mat-icon>
+                  {{ testando() === w.id ? 'Enviando...' : 'Enviar teste' }}
+                </button>
+                <button mat-icon-button type="button" matTooltip="Gerar novo segredo" aria-label="Gerar novo segredo" (click)="regenerarSegredo(w)">
+                  <mat-icon>autorenew</mat-icon>
+                </button>
+                <button mat-icon-button type="button" matTooltip="Editar" aria-label="Editar" (click)="editarSaida(w)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button type="button" matTooltip="Excluir" aria-label="Excluir" (click)="excluirSaida(w)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="vazio">Nenhum webhook de saída. Crie um para avisar outro sistema sobre novos leads, pagamentos e mais.</li>
+          }
+        </ul>
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Entrada">
+    <div class="aba">
+      <div class="barra">
+        <p>Cada webhook de entrada tem um endereço próprio que cria leads no funil (primeira etapa).</p>
+        <button mat-flat-button type="button" (click)="editarEntrada()">
+          <mat-icon>add</mat-icon>
+          Novo webhook
+        </button>
+      </div>
+      @if (entradas() === null) {
+        <app-skeleton [linhas]="3" />
+      } @else {
+        <ul class="lista">
+          @for (e of entradas(); track e.id) {
+            <li [class.inativo]="!e.ativo">
+              <div class="info">
+                <strong>{{ e.nome }}{{ e.ativo ? '' : ' (inativo)' }}</strong>
+                <span class="url">{{ endereco(e.token) }}</span>
+                <small>
+                  {{ e.totalRecebidos }} lead(s) recebido(s)
+                  @if (e.ultimoUsoEm) {
+                    · último em {{ e.ultimoUsoEm | date: 'dd/MM/yyyy HH:mm' }}
+                  }
+                </small>
+              </div>
+              <div class="acoes">
+                <button mat-icon-button type="button" matTooltip="Gerar novo endereço" aria-label="Gerar novo endereço" (click)="regenerarToken(e)">
+                  <mat-icon>autorenew</mat-icon>
+                </button>
+                <button mat-icon-button type="button" matTooltip="Editar" aria-label="Editar" (click)="editarEntrada(e)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button type="button" matTooltip="Excluir" aria-label="Excluir" (click)="excluirEntrada(e)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="vazio">Nenhum webhook de entrada. Crie um para receber os contatos do formulário do site.</li>
+          }
+        </ul>
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Log">
+    <div class="aba">
+      <div class="barra filtros">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Webhook</mat-label>
+          <mat-select [value]="filtroWebhook()" (selectionChange)="filtrarEntregas($event.value, filtroSucesso())">
+            <mat-option [value]="null">Todos</mat-option>
+            @for (w of saidas() ?? []; track w.id) {
+              <mat-option [value]="w.id">{{ w.nome }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Resultado</mat-label>
+          <mat-select [value]="filtroSucesso()" (selectionChange)="filtrarEntregas(filtroWebhook(), $event.value)">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option [value]="true">Entregues</mat-option>
+            <mat-option [value]="false">Com falha</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-icon-button type="button" matTooltip="Atualizar" aria-label="Atualizar" (click)="carregarEntregas()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+      @if (entregas() === null) {
+        <app-skeleton [linhas]="5" />
+      } @else {
+        <ul class="lista log">
+          @for (en of entregas(); track en.id) {
+            <li>
+              <button type="button" class="linha-log" (click)="alternar(en.id)" [attr.aria-expanded]="aberta() === en.id">
+                <mat-icon [class.ok]="en.sucesso" [class.falha]="!en.sucesso">{{ en.sucesso ? 'check_circle' : 'error' }}</mat-icon>
+                <span class="quando">{{ en.criadoEm | date: 'dd/MM HH:mm:ss' }}</span>
+                <span class="evento">{{ descricoes[en.evento] ?? en.evento }}</span>
+                <span class="destino">{{ nomeDoWebhook(en.webhookId) }}</span>
+                <span class="status">
+                  {{ en.statusHttp ? 'HTTP ' + en.statusHttp : 'sem resposta' }} · {{ en.tentativas }}x · {{ en.duracaoMs }} ms
+                </span>
+              </button>
+              @if (aberta() === en.id) {
+                <div class="detalhe">
+                  @if (en.erro) {
+                    <p class="erro">{{ en.erro }}</p>
+                  }
+                  <pre>{{ json(en.payload) }}</pre>
+                </div>
+              }
+            </li>
+          } @empty {
+            <li class="vazio">Nenhuma entrega nos últimos 30 dias.</li>
+          }
+        </ul>
+        @if (totalEntregas() > 20) {
+          <mat-paginator
+            [length]="totalEntregas()"
+            [pageIndex]="paginaEntregas()"
+            [pageSize]="20"
+            [hidePageSize]="true"
+            (page)="mudarPagina($event)"
+          />
+        }
+      }
+    </div>
+  </mat-tab>
+</mat-tab-group>

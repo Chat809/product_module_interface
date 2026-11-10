@@ -15,7 +15,7 @@ import { Observable, finalize } from 'rxjs';
 import { ProblemDetail } from '../../core/http/error.interceptor';
 import { PROVEDORES_DE_DATA } from '../datas/data-iso.adapter';
 
-export type TipoCampo = 'texto' | 'textarea' | 'email' | 'numero' | 'data' | 'select' | 'toggle' | 'cor';
+export type TipoCampo = 'texto' | 'textarea' | 'email' | 'numero' | 'data' | 'select' | 'multipla' | 'toggle' | 'cor';
 
 export interface OpcaoCampo {
   valor: unknown;
@@ -89,6 +89,20 @@ export interface FormularioCadastroData<T> {
                   @if (!campo.obrigatorio) {
                     <mat-option [value]="null">—</mat-option>
                   }
+                  @for (opcao of campo.opcoes ?? []; track $index) {
+                    <mat-option [value]="opcao.valor">{{ opcao.rotulo }}</mat-option>
+                  }
+                </mat-select>
+                @if (campo.dica) {
+                  <mat-hint>{{ campo.dica }}</mat-hint>
+                }
+                <mat-error>{{ erro(campo) }}</mat-error>
+              </mat-form-field>
+            }
+            @case ('multipla') {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" [class.inteiro]="!campo.meia">
+                <mat-label>{{ campo.rotulo }}</mat-label>
+                <mat-select multiple [formControlName]="campo.chave">
                   @for (opcao of campo.opcoes ?? []; track $index) {
                     <mat-option [value]="opcao.valor">{{ opcao.rotulo }}</mat-option>
                   }
@@ -261,6 +275,9 @@ export class FormularioCadastro<T = unknown> {
     if (campo.tipo === 'toggle') {
       return valor ?? true;
     }
+    if (campo.tipo === 'multipla') {
+      return Array.isArray(valor) ? [...valor] : [];
+    }
     if (campo.tipo === 'select' || campo.tipo === 'numero' || campo.tipo === 'data') {
       return valor ?? null;
     }
@@ -270,7 +287,7 @@ export class FormularioCadastro<T = unknown> {
   private validadores(campo: CampoCadastro): ValidatorFn[] {
     const validadores: ValidatorFn[] = [];
     if (campo.obrigatorio && campo.tipo !== 'toggle') {
-      validadores.push(Validators.required);
+      validadores.push(campo.tipo === 'multipla' ? (c) => (c.value?.length ? null : { required: true }) : Validators.required);
       if (!campo.tipo || campo.tipo === 'texto' || campo.tipo === 'textarea') {
         validadores.push(Validators.pattern(/\S/));
       }
@@ -282,7 +299,7 @@ export class FormularioCadastro<T = unknown> {
       if (campo.max !== undefined) {
         validadores.push(Validators.max(campo.max));
       }
-    } else if (campo.max !== undefined) {
+    } else if (campo.max !== undefined && campo.tipo !== 'multipla') {
       validadores.push(Validators.maxLength(campo.max));
     }
     if (campo.tipo === 'email') {
