@@ -47,13 +47,7 @@ export interface ProdutoRequest {
   versao?: number;
 }
 
-export interface Pagina<T> {
-  conteudo: T[];
-  pagina: number;
-  tamanho: number;
-  totalElementos: number;
-  totalPaginas: number;
-}
+export type { Pagina } from '../core/supabase/repositorio';
 
 export type TipoMovimentacao = 'ENTRADA' | 'SAIDA' | 'AJUSTE';
 

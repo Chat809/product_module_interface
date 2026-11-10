@@ -13,7 +13,7 @@ import { Observable, finalize } from 'rxjs';
 import { ROTULOS_PAPEL, descreverAcessos } from '../../core/auth/acessos';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { Demanda, TIPOS, URGENCIAS, rotuloDoStatus } from '../../demandas/demanda.model';
 import { DemandaService } from '../../demandas/demanda.service';
 import { Avatar } from '../../shared/avatar/avatar';

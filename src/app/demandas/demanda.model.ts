@@ -23,6 +23,9 @@ export interface Demanda {
   criadoPor: string | null;
   criadoEm: string | null;
   atualizadoEm: string | null;
+  quadroId?: string | null;
+  colunaId?: string | null;
+  extras?: Record<string, unknown>;
 }
 
 /** Espelha o DemandaRequestDTO da API. */
@@ -42,6 +45,7 @@ export interface UsuarioOpcao {
   id: string;
   nome: string;
   avatarUrl: string | null;
+  departamento?: string | null;
 }
 
 export interface FiltroDemandas {

@@ -27,7 +27,7 @@ const MAXIMO_DE_AVATARES = 3;
  * Traduz o índice em que o cartão foi solto (na coluna filtrada) para a posição na coluna completa,
  * que é o que a API espera. Ambas as listas chegam sem o cartão que está sendo movido.
  */
-export function posicaoNaColuna(visiveis: Demanda[], completa: Demanda[], indice: number): number {
+export function posicaoNaColuna<T>(visiveis: T[], completa: T[], indice: number): number {
   if (indice < visiveis.length) {
     return completa.indexOf(visiveis[indice]);
   }

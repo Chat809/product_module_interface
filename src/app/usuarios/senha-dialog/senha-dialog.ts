@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs';
 import { Usuario } from '../../core/auth/auth.model';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { UsuarioService } from '../usuario.service';
 
 /** As senhas ficam no Supabase só como hash: o admin não vê a atual, apenas define uma nova. */

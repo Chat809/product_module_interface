@@ -14,12 +14,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
-import { TimeoutError, finalize } from 'rxjs';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { Notificacao } from '../../core/feedback/notificacao.service';
-import { ProblemDetail } from '../../core/http/error.interceptor';
-import { acompanharEspera } from '../../core/http/espera';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { Tema } from '../../core/tema/tema.service';
+import { Marca } from '../../shared/marca/marca';
 import { BotaoGoogle } from '../botao-google/botao-google';
 
 type Campo = 'nome' | 'email' | 'senha' | 'confirmacao';
@@ -51,6 +51,7 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
   selector: 'app-registro',
   imports: [
     BotaoGoogle,
+    Marca,
     ReactiveFormsModule,
     RouterLink,
     MatButtonModule,
@@ -71,7 +72,6 @@ export class Registro {
   protected readonly tema = inject(Tema);
 
   protected readonly enviando = signal(false);
-  protected readonly demorando = signal(false);
   protected readonly senhaVisivel = signal(false);
 
   protected readonly form = this.fb.group({
@@ -82,7 +82,6 @@ export class Registro {
   });
 
   constructor() {
-    this.auth.acordarApi();
     this.form.controls.senha.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.form.controls.confirmacao.updateValueAndValidity());
@@ -98,7 +97,6 @@ export class Registro {
     this.auth
       .registrar(nome.trim(), email.trim(), senha)
       .pipe(
-        acompanharEspera(this.demorando),
         finalize(() => this.enviando.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -107,11 +105,7 @@ export class Registro {
           this.notificacao.sucesso(`Conta criada. Bem-vindo, ${usuario.nome.split(' ')[0]}!`);
           this.router.navigateByUrl('/');
         },
-        error: (erro: HttpErrorResponse | TimeoutError) => {
-          if (erro instanceof TimeoutError) {
-            this.notificacao.erro('A API demorou demais para responder. Tente novamente em instantes.');
-            return;
-          }
+        error: (erro: HttpErrorResponse) => {
           if (erro.status === 409) {
             this.form.controls.email.setErrors({
               api: 'Já existe uma conta com este e-mail. Entre com ela ou use outro e-mail.',

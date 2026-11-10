@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter, finalize, switchMap } from 'rxjs';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { Avatar } from '../../shared/avatar/avatar';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import {

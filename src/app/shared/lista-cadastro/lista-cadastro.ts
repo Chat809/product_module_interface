@@ -1,4 +1,3 @@
-import { HttpParams } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,20 +34,8 @@ export interface AcaoCadastro<T> {
 
 export type FonteCadastro<T> = (filtro: FiltroCadastro, pagina: number, tamanho: number) => Observable<Pagina<T>>;
 
-/** Busca, situação e página no formato aceito pelas listagens de cadastro da API. */
-export function paramsDe(filtro: FiltroCadastro, pagina: number, tamanho: number): HttpParams {
-  let params = new HttpParams().set('page', pagina).set('size', tamanho);
-  if (filtro.busca) {
-    params = params.set('busca', filtro.busca);
-  }
-  if (filtro.ativo !== null) {
-    params = params.set('ativo', filtro.ativo);
-  }
-  return params;
-}
-
 /**
- * Lista paginada pela API com busca, filtro de situação (ativos, inativos, todos) e ações de editar e excluir.
+ * Lista paginada no banco com busca, filtro de situação (ativos, inativos, todos) e ações de editar e excluir.
  * Quem usa abre os diálogos e chama {@link recarregar} depois de gravar.
  */
 @Component({

@@ -1,4 +1,4 @@
 export const environment = {
-  apiUrl: 'http://localhost:8080/api/v1',
   supabaseUrl: 'https://epzzbcdoukukfvhzonar.supabase.co',
+  supabaseChave: 'sb_publishable_ahyK34hMeoTtCt1XLMwa8g_MQh5vQM8',
 };

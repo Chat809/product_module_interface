@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { catchError, filter, finalize, merge, of } from 'rxjs';
 import { Notificacao } from '../../core/feedback/notificacao.service';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { SomenteNumeros } from '../../shared/somente-numeros/somente-numeros';
 import { Produto, ProdutoRequest, UNIDADES, UnidadeMedida } from '../produto.model';

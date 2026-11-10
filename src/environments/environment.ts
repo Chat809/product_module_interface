@@ -1,4 +1,5 @@
+/** A chave publicável é pública por definição: o que protege os dados são as políticas de RLS do banco. */
 export const environment = {
-  apiUrl: 'https://product-module-api.onrender.com/api/v1',
   supabaseUrl: 'https://epzzbcdoukukfvhzonar.supabase.co',
+  supabaseChave: 'sb_publishable_ahyK34hMeoTtCt1XLMwa8g_MQh5vQM8',
 };

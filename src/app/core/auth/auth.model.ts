@@ -1,12 +1,22 @@
 export type Papel = 'ADMIN' | 'USUARIO';
 
-/** Módulos (grupos do menu), com as mesmas chaves do enum Modulo da API. */
-export type Modulo = 'inicio' | 'estoque' | 'demandas' | 'financeiro' | 'crm' | 'relatorios' | 'configuracoes';
+/** Módulos (grupos do menu), com as mesmas chaves de `modulos_ativos` e das políticas do banco. */
+export type Modulo =
+  | 'inicio'
+  | 'estoque'
+  | 'demandas'
+  | 'financeiro'
+  | 'comercial'
+  | 'crm'
+  | 'rh'
+  | 'relatorios'
+  | 'configuracoes'
+  | (string & {});
 
 /** Subabas, no formato `modulo/subaba` gravado na coluna `acessos` do perfil. */
-export type ChaveSubaba = `${Modulo}/${string}`;
+export type ChaveSubaba = `${string}/${string}`;
 
-/** Espelha o UsuarioDTO da API. `acessos` traz `'*'` (todos) ou as chaves das subabas liberadas. */
+/** Pessoa logada ou listada. `acessos` traz `'*'` (todos), chaves de módulo ou de subaba. */
 export interface Usuario {
   id: string;
   nome: string;
@@ -14,17 +24,10 @@ export interface Usuario {
   papel: Papel;
   acessos: string[];
   criadoEm: string | null;
-  /** Ausente na resposta do login; vem de `/usuarios/me` e da listagem de usuários. */
   avatarUrl?: string | null;
-  /** Departamento e cargo (`funcao`) na empresa, definidos pelo admin; ausentes na resposta do login. */
+  /** Departamento e cargo (`funcao`) na empresa, definidos pelo admin. */
   departamento?: string | null;
   funcao?: string | null;
-}
-
-/** Espelha o SessaoDTO da API. */
-export interface Sessao {
-  accessToken: string;
-  refreshToken: string;
-  expiraEm: string;
-  usuario: Usuario;
+  telefone?: string | null;
+  bio?: string | null;
 }

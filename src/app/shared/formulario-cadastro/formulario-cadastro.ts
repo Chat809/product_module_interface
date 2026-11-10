@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Observable, finalize } from 'rxjs';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { PROVEDORES_DE_DATA } from '../datas/data-iso.adapter';
 
 export type TipoCampo = 'texto' | 'textarea' | 'email' | 'numero' | 'data' | 'select' | 'multipla' | 'toggle' | 'cor';

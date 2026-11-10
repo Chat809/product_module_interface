@@ -9,10 +9,7 @@
 </button>
 
 <section class="cartao">
-  <div class="marca">
-    <mat-icon>inventory_2</mat-icon>
-    <span>Painel de Produtos</span>
-  </div>
+  <app-marca class="marca" />
 
   <h1>Entrar</h1>
   <p class="subtitulo">Use seu e-mail e senha ou sua conta Google para acessar o painel.</p>
@@ -57,12 +54,6 @@
     <button mat-flat-button class="enviar" type="submit" [disabled]="enviando()">
       {{ enviando() ? 'Entrando...' : 'Entrar' }}
     </button>
-    @if (demorando()) {
-      <p class="aviso-demora" role="status">
-        <mat-icon>hourglass_top</mat-icon>
-        O servidor está iniciando, o que pode levar até 1 minuto no primeiro acesso. Aguarde...
-      </p>
-    }
   </form>
 
   <app-botao-google [voltar]="voltar()" />

@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,8 +11,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { SinoNotificacoes } from '../../notificacoes/sino-notificacoes';
-import { PerfilService } from '../../perfil/perfil.service';
 import { Avatar } from '../../shared/avatar/avatar';
+import { Marca } from '../../shared/marca/marca';
 import { ROTULOS_PAPEL, descreverAcessos } from '../auth/acessos';
 import { Modulo, Usuario } from '../auth/auth.model';
 import { AuthService } from '../auth/auth.service';
@@ -22,6 +22,7 @@ import { Tema } from '../tema/tema.service';
   selector: 'app-shell',
   imports: [
     Avatar,
+    Marca,
     MatButtonModule,
     MatIconModule,
     MatListModule,
@@ -42,8 +43,7 @@ import { Tema } from '../tema/tema.service';
         </button>
       }
       <a [routerLink]="auth.rotaInicial()" class="marca">
-        <mat-icon>inventory_2</mat-icon>
-        <span>Painel de Produtos</span>
+        <app-marca />
       </a>
       <span class="espaco"></span>
       <button
@@ -300,20 +300,11 @@ import { Tema } from '../tema/tema.service';
     }
   `,
 })
-export class Shell implements OnInit {
+export class Shell {
   protected readonly tema = inject(Tema);
   protected readonly auth = inject(AuthService);
-  private readonly perfilService = inject(PerfilService);
   protected readonly descreverAcessos = descreverAcessos;
   protected readonly rotulosPapel = ROTULOS_PAPEL;
-
-  /** Traz foto, nome, cargo e departamento atuais para o topo; se falhar, o painel segue com os dados da sessão. */
-  ngOnInit(): void {
-    this.perfilService.buscar(true).subscribe({
-      next: ({ telefone, bio, ...usuario }) => this.auth.atualizarUsuario(usuario),
-      error: () => undefined,
-    });
-  }
 
   protected cargoEDepartamento(usuario: Usuario): string {
     return [usuario.funcao, usuario.departamento].filter(Boolean).join(' · ');

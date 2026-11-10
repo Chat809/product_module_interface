@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { SomenteNumeros } from '../../shared/somente-numeros/somente-numeros';
 import {
   Conta,

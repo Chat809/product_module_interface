@@ -1,11 +1,11 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { Observable, switchMap, tap } from 'rxjs';
 import { Papel } from '../core/auth/auth.model';
-import { SEM_AVISO_DE_ERRO } from '../core/http/error.interceptor';
+import { AuthService, COLUNAS_DO_PERFIL } from '../core/auth/auth.service';
+import { enviarAvatar, removerAvatar } from '../core/supabase/avatares';
+import { SupabaseService } from '../core/supabase/supabase.service';
 
-/** Espelha o MeuPerfilDTO da API. */
+/** Perfil da pessoa logada (`perfis`). */
 export interface MeuPerfil {
   id: string;
   nome: string;
@@ -21,7 +21,7 @@ export interface MeuPerfil {
   departamento: string | null;
 }
 
-/** Espelha o AtualizarMeuPerfilRequestDTO: e-mail, nível, acessos, departamento e cargo ficam com o administrador. */
+/** E-mail, nível, acessos, departamento e cargo ficam com o administrador (o banco só libera estas colunas). */
 export interface AtualizarMeuPerfil {
   nome: string;
   telefone: string | null;
@@ -33,24 +33,44 @@ export const TAMANHO_MAXIMO_AVATAR = 2 * 1024 * 1024;
 
 @Injectable({ providedIn: 'root' })
 export class PerfilService {
-  private readonly http = inject(HttpClient);
-  private readonly url = `${environment.apiUrl}/usuarios/me`;
+  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+
+  private get id(): string {
+    return this.auth.usuario()?.id ?? '';
+  }
 
   buscar(silencioso = false): Observable<MeuPerfil> {
-    return this.http.get<MeuPerfil>(this.url, { context: new HttpContext().set(SEM_AVISO_DE_ERRO, silencioso) });
+    return this.supabase.executar<MeuPerfil>(
+      () => this.supabase.cliente.from('perfis').select(COLUNAS_DO_PERFIL).eq('id', this.id).single(),
+      { silencioso },
+    );
   }
 
   atualizar(dados: AtualizarMeuPerfil): Observable<MeuPerfil> {
-    return this.http.put<MeuPerfil>(this.url, dados);
+    return this.supabase
+      .executar<MeuPerfil>(() =>
+        this.supabase.cliente
+          .from('perfis')
+          .update({ nome: dados.nome.trim(), telefone: dados.telefone, bio: dados.bio })
+          .eq('id', this.id)
+          .select(COLUNAS_DO_PERFIL)
+          .single(),
+      )
+      .pipe(tap((perfil) => this.auth.atualizarUsuario(perfil)));
   }
 
   enviarAvatar(arquivo: File): Observable<MeuPerfil> {
-    const corpo = new FormData();
-    corpo.append('arquivo', arquivo);
-    return this.http.put<MeuPerfil>(`${this.url}/avatar`, corpo);
+    return enviarAvatar(this.supabase, this.id, arquivo, this.auth.usuario()?.avatarUrl).pipe(
+      switchMap(() => this.buscar()),
+      tap((perfil) => this.auth.atualizarUsuario(perfil)),
+    );
   }
 
   removerAvatar(): Observable<MeuPerfil> {
-    return this.http.delete<MeuPerfil>(`${this.url}/avatar`);
+    return removerAvatar(this.supabase, this.id, this.auth.usuario()?.avatarUrl).pipe(
+      switchMap(() => this.buscar()),
+      tap((perfil) => this.auth.atualizarUsuario(perfil)),
+    );
   }
 }

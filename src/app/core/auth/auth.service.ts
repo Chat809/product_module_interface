@@ -1,53 +1,67 @@
 import { DOCUMENT } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, finalize, map, shareReplay, tap, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { menuDe, podeAcessar } from './acessos';
-import { ChaveSubaba, Sessao, Usuario } from './auth.model';
-import { ROTA_RETORNO_GOOGLE, desafioDe, gerarVerificador, urlDoGoogle } from './google';
+import { Session, User } from '@supabase/supabase-js';
+import { Observable, defer, from, map, switchMap } from 'rxjs';
+import { ConfiguracaoService } from '../configuracao/configuracao.service';
+import { paraCamel } from '../supabase/caixa';
+import { erroHttp } from '../supabase/erros';
+import { SupabaseService } from '../supabase/supabase.service';
+import { ACESSOS_PADRAO, menuDe, podeAcessar } from './acessos';
+import { ChaveSubaba, Papel, Usuario } from './auth.model';
+import { ROTA_RETORNO_GOOGLE } from './google';
 
-const CHAVE_SESSAO = 'painel.sessao';
-const CHAVE_GOOGLE = 'painel.google';
-
-interface LoginGoogle {
-  verificador: string;
-  voltar?: string;
-}
-
-function lerSessaoGuardada(): Sessao | null {
-  try {
-    const bruto = localStorage.getItem(CHAVE_SESSAO);
-    return bruto ? (JSON.parse(bruto) as Sessao) : null;
-  } catch {
-    return null;
-  }
-}
+const CHAVE_VOLTAR_GOOGLE = 'painel.google.voltar';
+export const COLUNAS_DO_PERFIL = 'id, nome, email, papel, acessos, criado_em, telefone, funcao, bio, avatar_url, departamento';
 
 /**
- * Sessão do usuário. O painel só chama a API; o Supabase aparece apenas no redirecionamento do
- * login com Google, e mesmo ali a troca do código pela sessão é feita pelo backend.
+ * Sessão do usuário pelo Supabase Auth. O supabase-js guarda e renova o token sozinho; aqui ficam o perfil
+ * (`perfis`) e os acessos efetivos (perfil + grupos), que o banco também grava no token em `app_metadata`.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http = inject(HttpClient);
+  private readonly supabase = inject(SupabaseService);
+  private readonly configuracao = inject(ConfiguracaoService);
   private readonly router = inject(Router);
+  private readonly zona = inject(NgZone);
   private readonly documento = inject(DOCUMENT);
-  private readonly url = `${environment.apiUrl}/auth`;
 
-  private readonly sessao = signal<Sessao | null>(lerSessaoGuardada());
-  private renovacaoEmAndamento: Observable<Sessao> | null = null;
-  private apiAcordada = false;
+  private readonly atual = signal<Usuario | null>(null);
 
-  readonly usuario = computed(() => this.sessao()?.usuario ?? null);
-  readonly logado = computed(() => this.sessao() !== null);
-  readonly ehAdmin = computed(() => this.usuario()?.papel === 'ADMIN');
-  /** Módulos do menu, cada um só com as subabas que a pessoa pode abrir. */
-  readonly menu = computed(() => menuDe(this.usuario()));
+  readonly usuario = this.atual.asReadonly();
+  readonly logado = computed(() => this.atual() !== null);
+  readonly ehAdmin = computed(() => this.atual()?.papel === 'ADMIN');
+  /** Módulos ligados do menu, cada um só com as subabas que a pessoa pode abrir. */
+  readonly menu = computed(() => menuDe(this.atual(), this.configuracao.modulosLigados()));
 
+  /** Chamado antes da primeira rota: restaura a sessão guardada e passa a acompanhar login, renovação e saída. */
+  async iniciar(): Promise<void> {
+    const { data } = await this.supabase.cliente.auth.getSession();
+    if (data.session) {
+      await this.montar(data.session).catch(() => this.atual.set(null));
+    }
+    this.supabase.cliente.auth.onAuthStateChange((evento, sessao) => {
+      this.zona.run(() => {
+        if (evento === 'SIGNED_OUT' || !sessao) {
+          if (this.atual()) {
+            this.atual.set(null);
+            this.router.navigate(['/login']);
+          }
+          return;
+        }
+        if (evento === 'TOKEN_REFRESHED' || evento === 'USER_UPDATED') {
+          const usuario = this.atual();
+          if (usuario && usuario.id === sessao.user.id) {
+            this.atual.set({ ...usuario, ...this.doToken(sessao.user) });
+          }
+        }
+      });
+    });
+  }
+
+  /** Exige a subaba liberada e o módulo ligado em `modulos_ativos`. */
   podeAcessar(subaba: ChaveSubaba): boolean {
-    return podeAcessar(this.usuario(), subaba);
+    return podeAcessar(this.atual(), subaba) && this.menu().some((m) => m.subabas.some((s) => s.chave === subaba));
   }
 
   /** Primeira subaba liberada, para onde vão a raiz e as rotas proibidas. */
@@ -55,116 +69,105 @@ export class AuthService {
     return this.menu()[0]?.subabas[0]?.rota ?? '/sem-acesso';
   }
 
-  /** Mantém a sessão em dia quando o admin edita a própria conta na tela de usuários. */
-  atualizarUsuario(usuario: Usuario): void {
-    const atual = this.sessao();
-    if (atual && atual.usuario.id === usuario.id) {
-      this.persistir({ ...atual, usuario });
+  /** Mantém o topo em dia quando a pessoa edita o próprio perfil ou o admin edita a própria conta. */
+  atualizarUsuario(usuario: Partial<Usuario> & { id: string }): void {
+    const atual = this.atual();
+    if (atual && atual.id === usuario.id) {
+      this.atual.set({ ...atual, ...usuario, acessos: atual.acessos });
     }
-  }
-
-  /**
-   * Dispara o despertar da API enquanto o usuário preenche o formulário. O modo `no-cors`
-   * dispensa CORS no health check; a resposta opaca não importa, só a chegada da requisição.
-   */
-  acordarApi(): void {
-    if (this.apiAcordada) {
-      return;
-    }
-    this.apiAcordada = true;
-    const health = environment.apiUrl.replace(/\/api\/v1$/, '/actuator/health');
-    fetch(health, { mode: 'no-cors', cache: 'no-store' }).catch(() => (this.apiAcordada = false));
-  }
-
-  token(): string | null {
-    return this.sessao()?.accessToken ?? null;
   }
 
   entrar(email: string, senha: string): Observable<Usuario> {
-    return this.http.post<Sessao>(`${this.url}/login`, { email, senha }).pipe(
-      tap((sessao) => this.guardar(sessao)),
-      map((sessao) => sessao.usuario),
-    );
+    return this.autenticar(() => this.supabase.cliente.auth.signInWithPassword({ email, password: senha }));
   }
 
+  /** O perfil é criado pelo gatilho do banco com o nome dos metadados. */
   registrar(nome: string, email: string, senha: string): Observable<Usuario> {
-    return this.http.post<Sessao>(`${this.url}/registro`, { nome, email, senha }).pipe(
-      tap((sessao) => this.guardar(sessao)),
-      map((sessao) => sessao.usuario),
+    return this.autenticar(() =>
+      this.supabase.cliente.auth.signUp({
+        email,
+        password: senha,
+        options: { data: { nome }, emailRedirectTo: `${this.documento.location.origin}/login` },
+      }),
     );
   }
 
-  /**
-   * Leva ao Google pelo Supabase. O verificador e a rota de volta ficam no sessionStorage da aba,
-   * porque a página é recarregada no retorno.
-   */
+  /** Leva ao Google; a rota de volta fica no sessionStorage da aba, porque a página é recarregada no retorno. */
   async entrarComGoogle(voltar?: string): Promise<void> {
-    const verificador = gerarVerificador();
-    sessionStorage.setItem(CHAVE_GOOGLE, JSON.stringify({ verificador, voltar } satisfies LoginGoogle));
-    const retorno = `${this.documento.location.origin}${ROTA_RETORNO_GOOGLE}`;
-    this.irPara(urlDoGoogle(await desafioDe(verificador), retorno));
+    if (voltar) {
+      sessionStorage.setItem(CHAVE_VOLTAR_GOOGLE, voltar);
+    } else {
+      sessionStorage.removeItem(CHAVE_VOLTAR_GOOGLE);
+    }
+    const { error } = await this.supabase.cliente.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${this.documento.location.origin}${ROTA_RETORNO_GOOGLE}` },
+    });
+    if (error) {
+      throw error;
+    }
   }
 
-  /** Troca o código do retorno pela sessão. O verificador é descartado mesmo se a troca falhar: o código é de uso único. */
+  /** Troca o código do retorno pela sessão (o verificador PKCE foi guardado pelo supabase-js). */
   concluirGoogle(codigo: string): Observable<{ usuario: Usuario; voltar?: string }> {
-    const guardado = sessionStorage.getItem(CHAVE_GOOGLE);
-    sessionStorage.removeItem(CHAVE_GOOGLE);
-    if (!guardado) {
-      return throwError(() => new Error('Login com Google não iniciado nesta aba'));
-    }
-    const { verificador, voltar } = JSON.parse(guardado) as LoginGoogle;
-    return this.http.post<Sessao>(`${this.url}/google`, { codigo, verificador }).pipe(
-      tap((sessao) => this.guardar(sessao)),
-      map((sessao) => ({ usuario: sessao.usuario, voltar })),
+    const voltar = sessionStorage.getItem(CHAVE_VOLTAR_GOOGLE) ?? undefined;
+    sessionStorage.removeItem(CHAVE_VOLTAR_GOOGLE);
+    return this.autenticar(() => this.supabase.cliente.auth.exchangeCodeForSession(codigo)).pipe(
+      map((usuario) => ({ usuario, voltar })),
     );
-  }
-
-  /**
-   * O Supabase invalida o refresh token a cada uso, então requisições que expiram juntas
-   * compartilham a mesma renovação em vez de disparar várias.
-   */
-  renovar(): Observable<Sessao> {
-    if (!this.renovacaoEmAndamento) {
-      const refreshToken = this.sessao()?.refreshToken ?? '';
-      this.renovacaoEmAndamento = this.http.post<Sessao>(`${this.url}/refresh`, { refreshToken }).pipe(
-        tap((sessao) => this.guardar(sessao)),
-        finalize(() => (this.renovacaoEmAndamento = null)),
-        shareReplay(1),
-      );
-    }
-    return this.renovacaoEmAndamento;
   }
 
   sair(): void {
-    this.sessao.set(null);
-    localStorage.removeItem(CHAVE_SESSAO);
-    this.router.navigate(['/login']);
+    this.atual.set(null);
+    this.supabase.cliente.auth.signOut().finally(() => this.router.navigate(['/login']));
   }
 
-  protected irPara(url: string): void {
-    this.documento.location.assign(url);
+  private autenticar(
+    chamada: () => Promise<{ data: { session: Session | null }; error: unknown }>,
+  ): Observable<Usuario> {
+    return defer(() => from(chamada())).pipe(
+      switchMap(({ data, error }) => {
+        if (error) {
+          throw this.supabase.falha(error, { autenticacao: true });
+        }
+        if (!data.session) {
+          throw this.supabase.falha(
+            erroHttp(401, 'Conta criada. Confirme o seu e-mail pelo link enviado e depois entre.'),
+            { autenticacao: true },
+          );
+        }
+        return from(this.montar(data.session));
+      }),
+    );
   }
 
-  /** Login e renovação não trazem foto, departamento nem cargo; eles são mantidos da sessão anterior do mesmo usuário. */
-  private guardar(sessao: Sessao): void {
-    const anterior = this.sessao()?.usuario;
-    if (anterior?.id === sessao.usuario.id) {
-      const { avatarUrl, departamento, funcao } = sessao.usuario;
-      sessao = {
-        ...sessao,
-        usuario: {
-          ...sessao.usuario,
-          avatarUrl: avatarUrl ?? anterior.avatarUrl,
-          departamento: departamento ?? anterior.departamento,
-          funcao: funcao ?? anterior.funcao,
-        },
-      };
-    }
-    this.persistir(sessao);
+  private doToken(usuario: User): Pick<Usuario, 'papel' | 'acessos'> {
+    const metadados = usuario.app_metadata ?? {};
+    return {
+      papel: (metadados['papel'] as Papel | undefined) ?? 'USUARIO',
+      acessos: (metadados['acessos'] as string[] | undefined) ?? ACESSOS_PADRAO,
+    };
   }
 
-  private persistir(sessao: Sessao): void {
-    this.sessao.set(sessao);
-    localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+  /** Junta o token (acessos efetivos) e o perfil (nome, foto, cargo); se o perfil falhar, fica o que o token tem. */
+  private async montar(sessao: Session): Promise<Usuario> {
+    const doToken = this.doToken(sessao.user);
+    const { data } = await this.supabase.cliente.from('perfis').select(COLUNAS_DO_PERFIL).eq('id', sessao.user.id).maybeSingle();
+    const perfil = data ? paraCamel<Usuario>(data) : null;
+    const usuario: Usuario = {
+      id: sessao.user.id,
+      email: perfil?.email ?? sessao.user.email ?? '',
+      nome: perfil?.nome ?? (sessao.user.user_metadata?.['nome'] as string | undefined) ?? sessao.user.email ?? '',
+      criadoEm: perfil?.criadoEm ?? sessao.user.created_at ?? null,
+      avatarUrl: perfil?.avatarUrl ?? null,
+      departamento: perfil?.departamento ?? null,
+      funcao: perfil?.funcao ?? null,
+      telefone: perfil?.telefone ?? null,
+      bio: perfil?.bio ?? null,
+      papel: perfil?.papel ?? doToken.papel,
+      acessos: doToken.acessos,
+    };
+    this.atual.set(usuario);
+    return usuario;
   }
 }

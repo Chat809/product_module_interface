@@ -16,6 +16,11 @@ const TITULOS: Record<TipoRelatorio, { titulo: string; subtitulo: string }> = {
   comercial: { titulo: 'Relatório comercial', subtitulo: 'Leads, conversões e desempenho da equipe no período.' },
   estoque: { titulo: 'Relatório de estoque', subtitulo: 'Situação atual do estoque e retiradas dos últimos 30 dias.' },
   atendimento: { titulo: 'Relatório de atendimento', subtitulo: 'Reclamações abertas e resolvidas no período.' },
+  dre: {
+    titulo: 'DRE',
+    subtitulo: 'Demonstrativo de resultado pelo plano de contas, com base na competência dos lançamentos.',
+  },
+  satisfacao: { titulo: 'Relatório de satisfação', subtitulo: 'NPS e notas das pesquisas respondidas no período.' },
 };
 
 function iso(data: Date): string {
@@ -24,7 +29,7 @@ function iso(data: Date): string {
   return `${data.getFullYear()}-${mes}-${dia}`;
 }
 
-/** Relatórios > (financeiro | comercial | estoque | atendimento): o tipo vem do `data` da rota. */
+/** Relatórios > (financeiro | dre | comercial | estoque | atendimento | satisfacao): o tipo vem do `data` da rota. */
 @Component({
   selector: 'app-relatorio-page',
   imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, Skeleton],

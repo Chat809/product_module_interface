@@ -27,6 +27,18 @@ export interface Conta {
   /** Fornecedor (a pagar) ou cliente (a receber) cadastrado. */
   vinculoId: string | null;
   centroCustoId: string | null;
+  competencia?: string | null;
+  contaBancariaId?: string | null;
+  planoContaId?: string | null;
+  recorrenciaId?: string | null;
+  parcelamentoId?: string | null;
+  parcelaNumero?: number | null;
+  parcelaTotal?: number | null;
+  juros?: number;
+  multa?: number;
+  desconto?: number;
+  valorPago?: number | null;
+  extras?: Record<string, unknown>;
 }
 
 export interface Fornecedor {
@@ -81,6 +93,10 @@ export interface ContaRequest {
   observacoes: string | null;
   vinculoId: string | null;
   centroCustoId: string | null;
+  competencia?: string | null;
+  contaBancariaId?: string | null;
+  planoContaId?: string | null;
+  extras?: Record<string, unknown>;
 }
 
 /** Espelha o ResumoFinanceiroDTO: totais pelo valor líquido. */

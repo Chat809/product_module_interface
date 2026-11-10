@@ -1,11 +1,12 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { Observable, map, switchMap, tap } from 'rxjs';
 import { Papel, Usuario } from '../core/auth/auth.model';
+import { AuthService, COLUNAS_DO_PERFIL } from '../core/auth/auth.service';
+import { enviarAvatar, removerAvatar } from '../core/supabase/avatares';
+import { RepositorioSupabase } from '../core/supabase/repositorio';
+import { SupabaseService } from '../core/supabase/supabase.service';
 import { Pagina } from '../produtos/produto.model';
 
-/** Espelha o AtualizarUsuarioRequestDTO da API. */
 export interface AtualizarUsuario {
   nome: string;
   email: string;
@@ -16,43 +17,64 @@ export interface AtualizarUsuario {
   funcao: string | null;
 }
 
-/** Espelha o CriarUsuarioRequestDTO da API. */
 export interface NovoUsuario extends AtualizarUsuario {
   senha: string;
 }
 
+/**
+ * Leitura direto em `perfis` (a política libera para quem tem Usuários e acessos); criar, alterar e-mail ou papel,
+ * redefinir senha e excluir passam pela Edge Function `admin-usuarios`, que usa a chave do servidor.
+ */
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
-  private readonly http = inject(HttpClient);
-  private readonly url = `${environment.apiUrl}/usuarios`;
+  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+  private readonly perfis = new RepositorioSupabase<Usuario>(this.supabase, {
+    tabela: 'perfis',
+    selecao: COLUNAS_DO_PERFIL,
+    ordem: [{ coluna: 'nome' }],
+  });
 
   listar(pagina: number, tamanho: number): Observable<Pagina<Usuario>> {
-    return this.http.get<Pagina<Usuario>>(this.url, { params: { page: pagina, size: tamanho } });
+    return this.perfis.listar({}, pagina, tamanho);
   }
 
   criar(dados: NovoUsuario): Observable<Usuario> {
-    return this.http.post<Usuario>(this.url, dados);
+    return this.supabase
+      .funcao<{ id: string }>('admin-usuarios', { acao: 'criar', ...dados })
+      .pipe(switchMap(({ id }) => this.perfis.buscar(id)));
   }
 
   atualizar(id: string, dados: AtualizarUsuario): Observable<Usuario> {
-    return this.http.put<Usuario>(`${this.url}/${id}`, dados);
+    return this.supabase.funcao<{ id: string }>('admin-usuarios', { acao: 'atualizar', id, ...dados }).pipe(
+      switchMap(() => this.perfis.buscar(id)),
+      tap((usuario) => this.auth.atualizarUsuario(usuario)),
+    );
   }
 
   excluir(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.url}/${id}`);
+    return this.supabase.funcao<unknown>('admin-usuarios', { acao: 'excluir', id }).pipe(map(() => undefined));
   }
 
   redefinirSenha(id: string, senha: string): Observable<void> {
-    return this.http.put<void>(`${this.url}/${id}/senha`, { senha });
+    return this.supabase
+      .funcao<unknown>('admin-usuarios', { acao: 'redefinir_senha', id, senha })
+      .pipe(map(() => undefined));
   }
 
   enviarAvatar(id: string, arquivo: File): Observable<Usuario> {
-    const corpo = new FormData();
-    corpo.append('arquivo', arquivo);
-    return this.http.put<Usuario>(`${this.url}/${id}/avatar`, corpo);
+    return this.perfis.buscar(id).pipe(
+      switchMap((usuario) => enviarAvatar(this.supabase, id, arquivo, usuario.avatarUrl)),
+      switchMap(() => this.perfis.buscar(id)),
+      tap((usuario) => this.auth.atualizarUsuario(usuario)),
+    );
   }
 
   removerAvatar(id: string): Observable<Usuario> {
-    return this.http.delete<Usuario>(`${this.url}/${id}/avatar`);
+    return this.perfis.buscar(id).pipe(
+      switchMap((usuario) => removerAvatar(this.supabase, id, usuario.avatarUrl)),
+      switchMap(() => this.perfis.buscar(id)),
+      tap((usuario) => this.auth.atualizarUsuario(usuario)),
+    );
   }
 }

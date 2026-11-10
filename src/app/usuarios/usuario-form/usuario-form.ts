@@ -15,7 +15,7 @@ import { Observable, finalize } from 'rxjs';
 import { ACESSOS_PADRAO, ACESSO_TOTAL, DefinicaoDeModulo, MODULOS, ROTULOS_PAPEL, podeAcessar } from '../../core/auth/acessos';
 import { ChaveSubaba, Papel, Usuario } from '../../core/auth/auth.model';
 import { Notificacao } from '../../core/feedback/notificacao.service';
-import { ProblemDetail } from '../../core/http/error.interceptor';
+import { ProblemDetail } from '../../core/supabase/erros';
 import { TAMANHO_MAXIMO_AVATAR, TIPOS_DE_AVATAR } from '../../perfil/perfil.service';
 import { Avatar } from '../../shared/avatar/avatar';
 import { UsuarioService } from '../usuario.service';

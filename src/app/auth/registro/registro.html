@@ -9,10 +9,7 @@
 </button>
 
 <section class="cartao">
-  <div class="marca">
-    <mat-icon>inventory_2</mat-icon>
-    <span>Painel de Produtos</span>
-  </div>
+  <app-marca class="marca" />
 
   <h1>Criar conta</h1>
   <p class="subtitulo">Preencha seus dados para começar a usar o painel.</p>
@@ -69,12 +66,6 @@
     <button mat-flat-button class="enviar" type="submit" [disabled]="enviando()">
       {{ enviando() ? 'Criando conta...' : 'Criar conta' }}
     </button>
-    @if (demorando()) {
-      <p class="aviso-demora" role="status">
-        <mat-icon>hourglass_top</mat-icon>
-        O servidor está iniciando, o que pode levar até 1 minuto no primeiro acesso. Aguarde...
-      </p>
-    }
   </form>
 
   <app-botao-google rotulo="Criar conta com Google" />

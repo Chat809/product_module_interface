@@ -1,8 +1,6 @@
-import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
-const ESPERA_ANTES_DO_AVISO_MS = 3000;
-
-/** Placeholder de linhas animadas, com aviso sobre a partida a frio da API no plano gratuito do Render. */
+/** Placeholder de linhas animadas enquanto a lista carrega. */
 @Component({
   selector: 'app-skeleton',
   template: `
@@ -15,9 +13,6 @@ const ESPERA_ANTES_DO_AVISO_MS = 3000;
         </div>
       }
     </div>
-    @if (demorando()) {
-      <p class="aviso">O servidor pode levar até 1 minuto para iniciar. Aguarde...</p>
-    }
   `,
   styles: `
     .linhas {
@@ -45,25 +40,10 @@ const ESPERA_ANTES_DO_AVISO_MS = 3000;
     .texto {
       width: 70%;
     }
-
-    .aviso {
-      text-align: center;
-      color: var(--mat-sys-on-surface-variant);
-    }
   `,
 })
-export class Skeleton implements OnInit, OnDestroy {
+export class Skeleton {
   readonly linhas = input(5);
 
   protected readonly indices = computed(() => Array.from({ length: this.linhas() }, (_, i) => i));
-  protected readonly demorando = signal(false);
-  private timer?: ReturnType<typeof setTimeout>;
-
-  ngOnInit(): void {
-    this.timer = setTimeout(() => this.demorando.set(true), ESPERA_ANTES_DO_AVISO_MS);
-  }
-
-  ngOnDestroy(): void {
-    clearTimeout(this.timer);
-  }
 }

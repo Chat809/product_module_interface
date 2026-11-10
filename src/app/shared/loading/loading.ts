@@ -1,18 +1,13 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-const ESPERA_ANTES_DO_AVISO_MS = 3000;
-
-/** Indicador de carregamento que avisa sobre a partida a frio da API no plano gratuito do Render. */
+/** Indicador de carregamento centralizado. */
 @Component({
   selector: 'app-loading',
   imports: [MatProgressSpinnerModule],
   template: `
     <div class="loading">
       <mat-spinner diameter="40" />
-      @if (demorando()) {
-        <p>O servidor pode levar até 1 minuto para iniciar. Aguarde...</p>
-      }
     </div>
   `,
   styles: `
@@ -26,15 +21,4 @@ const ESPERA_ANTES_DO_AVISO_MS = 3000;
     }
   `,
 })
-export class Loading implements OnInit, OnDestroy {
-  protected readonly demorando = signal(false);
-  private timer?: ReturnType<typeof setTimeout>;
-
-  ngOnInit(): void {
-    this.timer = setTimeout(() => this.demorando.set(true), ESPERA_ANTES_DO_AVISO_MS);
-  }
-
-  ngOnDestroy(): void {
-    clearTimeout(this.timer);
-  }
-}
+export class Loading {}
