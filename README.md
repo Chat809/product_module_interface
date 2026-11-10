@@ -5,14 +5,14 @@
 ![Angular Material](https://img.shields.io/badge/Angular%20Material-22-3f51b5)
 ![Testes](https://img.shields.io/badge/testes-224%20passando-success)
 
-Painel em Angular que consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot, publicada no Render). Começou como a interface do CRUD de produtos pedido no teste técnico e hoje também tem login (e-mail e senha ou Google), acessos por módulo, gestão de usuários, perfil com foto, um quadro Kanban de demandas e um módulo financeiro.
+Painel em Angular que consome a [Produtos API](https://github.com/Chat809/product_module_api) (Spring Boot, publicada no Render). Começou como a interface do CRUD de produtos pedido no teste técnico e hoje também tem login (e-mail e senha ou Google), menu em abas e subabas com acesso por subaba, gestão de usuários, perfil com foto, um quadro Kanban de demandas, financeiro (com fornecedores e centros de custo), CRM (clientes, funil de leads e reclamações), notificações no sino, webhooks e relatórios com exportação em CSV.
 
 ![Dashboard do painel](docs/dashboard.png)
 
 ## Sumário
 
 - [Links rápidos](#links-rápidos) · [O que o painel cobre do teste](#o-que-o-painel-cobre-do-teste) · [O que tem no painel](#o-que-tem-no-painel)
-- Funcionalidades em detalhe: [Login, Criar conta e Google](#login-criar-conta-e-google) · [Dashboard](#dashboard) · [Produtos e estoque](#produtos-e-estoque) · [Usuários e acessos](#usuários-e-acessos) · [Meu perfil](#meu-perfil) · [Demandas](#demandas) · [Financeiro](#financeiro)
+- Funcionalidades em detalhe: [Login, Criar conta e Google](#login-criar-conta-e-google) · [Dashboard](#dashboard) · [Produtos e estoque](#produtos-e-estoque) · [Usuários e acessos](#usuários-e-acessos) · [Meu perfil](#meu-perfil) · [Demandas](#demandas) · [Financeiro](#financeiro) · [CRM](#crm) · [Notificações](#notificações) · [Webhooks e integrações](#webhooks-e-integrações) · [Relatórios](#relatórios)
 - Referência técnica: [Stack](#stack) · [Como executar](#como-executar) · [Testes](#testes) · [Estrutura e rotas](#estrutura-e-rotas) · [Decisões](#decisões) · [Segurança](#segurança) · [Deploy na Vercel](#deploy-na-vercel) · [Referências](#referências)
 
 ## Links rápidos
@@ -48,12 +48,21 @@ Todas as telas e rotas (conferidas com `app.routes.ts`):
 | Login `/login` | Público (sem sessão) | Entrar com e-mail e senha ou com Google |
 | Criar conta `/registro` | Público (sem sessão) | Criar conta de Usuário, com formulário ou Google |
 | Retorno do Google `/auth/callback` | Público | Concluir o login com Google e voltar à página pedida |
-| Raiz `/` | Logado | Redireciona para o primeiro módulo liberado |
-| Dashboard `/dashboard` | Módulo `dashboard` | Ver indicadores do estoque e a lista "Precisa repor"; registrar entrada |
-| Produtos `/produtos` | Módulo `produtos` | Buscar, filtrar, ordenar; cadastrar, editar, excluir; registrar entrada e saída e ver o histórico |
-| Demandas `/demandas` | Módulo `demandas` | Quadro Kanban: criar, editar, arrastar entre colunas, checklist, responsáveis, filtros |
-| Financeiro `/financeiro` | Módulo `financeiro` | Resumo; contas a pagar e a receber com imposto e Pix; dar baixa, cancelar, excluir |
-| Usuários `/usuarios` | Só administrador | Criar e excluir contas; editar nome, e-mail, departamento, cargo, nível de acesso, acessos e foto; definir nova senha |
+| Raiz `/` e cada módulo (`/financeiro`, `/crm`...) | Logado | Redireciona para a primeira subaba liberada |
+| Início > Dashboard `/inicio/dashboard` | `inicio/dashboard` | Ver indicadores do estoque e a lista "Precisa repor"; registrar entrada |
+| Estoque > Produtos `/estoque/produtos` | `estoque/produtos` | Buscar, filtrar, ordenar; cadastrar, editar, excluir; registrar entrada e saída e ver o histórico |
+| Demandas > Quadro `/demandas/quadro` | `demandas/quadro` | Quadro Kanban: criar, editar, arrastar entre colunas, checklist, responsáveis, filtros |
+| Financeiro > Contas a pagar e a receber `/financeiro/contas-pagar`, `/financeiro/contas-receber` | a subaba correspondente | Resumo; contas com imposto, Pix, fornecedor ou cliente e centro de custo; dar baixa, cancelar, excluir |
+| Financeiro > Fornecedores e Centros de custo `/financeiro/fornecedores`, `/financeiro/centros-custo` | a subaba correspondente | Cadastrar, editar, inativar e excluir |
+| CRM > Clientes `/crm/clientes` | `crm/clientes` | Cadastro de pessoas físicas e jurídicas; ficha com interações, reclamações e contas a receber |
+| CRM > Leads `/crm/leads` | `crm/leads` | Funil em Kanban, interações, conversão em cliente |
+| CRM > Reclamações `/crm/reclamacoes` | `crm/reclamacoes` | Quadro por status, protocolo, prazo, histórico e comentários |
+| Relatórios > Financeiro, Comercial, Estoque, Atendimento `/relatorios/...` | a subaba correspondente | Período, indicadores, gráficos de barras, tabelas e "Exportar CSV" |
+| Configurações > Usuários e acessos `/configuracoes/usuarios` | Só administrador | Criar e excluir contas; editar nome, e-mail, departamento, cargo, nível de acesso, subabas liberadas e foto; definir nova senha |
+| Configurações > Parâmetros do CRM `/configuracoes/parametros-crm` | Só administrador | Etapas do funil (ordem, cor, tipo) e origens de leads |
+| Configurações > Notificações `/configuracoes/notificacoes` | Logado (qualquer conta) | Escolher o que aparece no sino e o que vai por e-mail |
+| Configurações > Webhooks `/configuracoes/webhooks` | Só administrador | Webhooks de saída e de entrada, envio de teste e log de entregas |
+| Configurações > Integrações `/configuracoes/integracoes` | Só administrador | Situação do Supabase, login com Google, e-mail e webhooks |
 | Meu perfil `/perfil` | Logado (qualquer conta) | Editar nome, telefone, função e bio; enviar foto; ver "Minhas tarefas" |
 | Sem acesso `/sem-acesso` | Logado | Aviso de que nenhum módulo foi liberado |
 
@@ -137,6 +146,48 @@ O botão **Novo usuário** abre o mesmo modal, sem a foto e com o campo **Senha 
 
 **Por quê:** o imposto é um percentual e o líquido é calculado pelo banco, então a prévia é só informativa e o valor gravado vem sempre da API. Os totais usam o líquido, que é o que de fato sai ou entra no caixa. Cancelar mantém o histórico; excluir é para lançamento feito por engano.
 
+Fornecedores e Centros de custo usam dois componentes genéricos: `ListaCadastro` (tabela paginada com busca, filtro de ativos e ações) e `FormularioCadastro` (diálogo montado a partir de uma lista de campos, com erros da API embaixo de cada campo). Os cadastros do CRM e dos webhooks reaproveitam os mesmos dois.
+
+### CRM
+
+**O que faz:**
+- **Clientes:** lista com busca e filtros. A ficha do cliente tem dados, interações, reclamações e contas a receber.
+- **Leads:** funil em Kanban; arrastar muda a etapa (etapas de perda pedem o motivo). O detalhe registra interações e converte o lead em cliente.
+- **Reclamações:** quadro por status, com protocolo, prioridade e prazo (atrasadas em vermelho). O detalhe mostra o histórico, aceita comentários e muda o status; resolver pede a solução.
+
+**Como foi feita:** `CrmService` fala com `/crm/clientes`, `/crm/leads` e `/crm/reclamacoes`. Os quadros usam o CDK Drag and Drop. A posição de um cartão solto entre dois outros é a média das posições vizinhas (`ordemNaPosicao`), e a mudança aparece na hora e é desfeita se a API recusar. Os estilos dos dois quadros ficam em `crm/quadro-crm.scss`.
+
+**Por quê:** o mesmo padrão de arrastar das Demandas, que já era conhecido, sem renumerar a coluna a cada movimento.
+
+### Notificações
+
+**O que faz:** o sino da barra superior mostra quantas notificações não foram lidas e abre a lista; clicar leva ao lead, à reclamação, à demanda ou à conta. Em Configurações > Notificações, cada pessoa liga ou desliga cada tipo no painel e por e-mail.
+
+**Como foi feita:** `SinoNotificacoes` consulta `/notificacoes/nao-lidas` a cada 60 segundos em segundo plano (sem aviso de erro) e carrega a lista ao abrir o menu.
+
+**Por quê:** consulta periódica é simples e suficiente para avisos que não precisam chegar no mesmo segundo.
+
+### Webhooks e integrações
+
+**O que faz:** a tela Webhooks tem três abas:
+- **Saída:** endereço `https://`, eventos assinados, segredo mascarado, "Enviar teste" e "Gerar novo segredo".
+- **Entrada:** endereço público para criar leads, contador de recebidos e "Gerar novo endereço".
+- **Log:** entregas dos últimos 30 dias, com filtro por webhook e resultado e o JSON enviado.
+
+Ao criar ou regenerar, o segredo ou o endereço completo aparece uma única vez, com botão de copiar. A tela Integrações mostra a situação de cada serviço, sem chaves.
+
+**Como foi feita:** `WebhookService` (em `configuracoes/webhooks`) usa `/configuracoes/webhooks` e `/configuracoes/integracoes`. O formulário genérico ganhou o tipo de campo `multipla`, usado na escolha dos eventos.
+
+**Por quê:** mostrar o segredo só uma vez segue a prática de serviços como GitHub e Stripe: quem perdeu gera outro, e o valor não fica exposto na tela.
+
+### Relatórios
+
+**O que faz:** cada subaba (Financeiro, Comercial, Estoque e Atendimento) tem filtro de período com atalhos (este mês, 30 e 90 dias, este ano), cartões de indicadores, gráficos de barras, tabelas e o botão "Exportar CSV". O de estoque mostra a situação atual e não tem período.
+
+**Como foi feita:** um único componente, `RelatorioPage`, recebe o tipo pelo `data` da rota e desenha o que a API devolve (`indicadores`, `graficos` e `tabelas`, cada valor com seu formato). As barras são CSS puro, com largura proporcional ao maior valor. O CSV vem pronto da API e é baixado como arquivo.
+
+**Por quê:** sem biblioteca de gráficos, como combinado; o formato único da API faz um relatório novo não exigir tela nova.
+
 ## Referência técnica
 
 ### Stack
@@ -174,7 +225,7 @@ Build: `npm run build`, com saída em `dist/product-module-interface/browser`.
 npm test
 ```
 
-São 224 testes com Vitest. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
+São 224 testes com Vitest, que cobrem as telas até o financeiro; as subabas, cadastros, CRM, notificações, webhooks e relatórios foram entregues sem testes novos, por decisão sua. Cada teste sobe um componente ou serviço isolado pelo `TestBed`, troca as dependências por `vi.fn()` ou intercepta o HTTP com `HttpTestingController`, e confere a tela e as chamadas feitas. O CI (`.github/workflows/ci.yml`) roda build e testes a cada push e pull request.
 
 | Arquivo | O que cobre |
 |---|---|
@@ -204,13 +255,17 @@ src/app
 │   ├── feedback, http             Toasts e interceptor que traduz os erros da API
 │   ├── layout                     Shell (barra superior com foto, menu por módulo) e tela de sem acesso
 │   └── i18n, tema                 Paginador em português e modo claro/escuro
-├── shared                         Avatar, diálogo de confirmação, skeleton, loading e diretiva de números
+├── shared                         Avatar, confirmação, diálogo de texto, lista e formulário genéricos, skeleton e loading
 ├── dashboard                      Indicadores e reposição
 ├── produtos                       Store, filtros, lista, formulário e movimentações
 ├── usuarios                       Lista, edição de departamento, cargo, nível, acessos e foto, nova senha
 ├── perfil                         Meu perfil (dados, foto e Minhas tarefas)
 ├── demandas                       Quadro Kanban e modal da demanda
-└── financeiro                     Resumo, lista por tipo de conta, modal de lançamento e baixa
+├── financeiro                     Resumo, contas, fornecedores, centros de custo, lançamento e baixa
+├── crm                            Clientes e ficha, funil de leads, reclamações e interações
+├── notificacoes                   Sino da barra superior e serviço de notificações
+├── relatorios                     Página única dos quatro relatórios e exportação CSV
+└── configuracoes                  Parâmetros do CRM, preferências de notificação, webhooks e integrações
 ```
 
 As rotas e quem acessa cada uma estão em [O que tem no painel](#o-que-tem-no-painel).

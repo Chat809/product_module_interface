@@ -95,7 +95,7 @@ export class WebhookService {
   }
 
   entregas(filtro: { webhookId?: string | null; sucesso?: boolean | null }, pagina: number, tamanho: number) {
-    let params = new HttpParams().set('pagina', pagina).set('tamanho', tamanho);
+    let params = new HttpParams().set('page', pagina).set('size', tamanho);
     if (filtro.webhookId) {
       params = params.set('webhookId', filtro.webhookId);
     }
