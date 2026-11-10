@@ -1,0 +1,101 @@
+<header class="cabecalho">
+  <div>
+    <h1>{{ textos.titulo }}</h1>
+    <p class="subtitulo">{{ textos.subtitulo }}</p>
+  </div>
+  <button mat-stroked-button type="button" [disabled]="exportando() || !relatorio()" (click)="exportar()">
+    <mat-icon>download</mat-icon>
+    {{ exportando() ? 'Exportando...' : 'Exportar CSV' }}
+  </button>
+</header>
+
+@if (usaPeriodo) {
+  <form class="filtros" (ngSubmit)="gerar()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>De</mat-label>
+      <input matInput type="date" name="inicio" [(ngModel)]="inicio" required />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Até</mat-label>
+      <input matInput type="date" name="fim" [(ngModel)]="fim" required />
+    </mat-form-field>
+    <button mat-flat-button type="submit" [disabled]="carregando()">
+      <mat-icon>refresh</mat-icon>
+      Gerar
+    </button>
+    <div class="atalhos">
+      <button mat-button type="button" (click)="atalho('mes')">Este mês</button>
+      <button mat-button type="button" (click)="atalho(30)">Últimos 30 dias</button>
+      <button mat-button type="button" (click)="atalho(90)">Últimos 90 dias</button>
+      <button mat-button type="button" (click)="atalho('ano')">Este ano</button>
+    </div>
+  </form>
+}
+
+@if (relatorio() === null) {
+  <app-skeleton [linhas]="8" />
+} @else {
+  <div class="conteudo" [class.atualizando]="carregando()">
+    <section class="indicadores">
+      @for (i of relatorio()!.indicadores; track i.rotulo) {
+        <div class="indicador">
+          <span class="rotulo">{{ i.rotulo }}</span>
+          <strong [class.negativo]="i.formato === 'moeda' && i.valor < 0">{{ formatar(i.valor, i.formato) }}</strong>
+        </div>
+      }
+    </section>
+
+    <section class="graficos">
+      @for (g of relatorio()!.graficos; track g.titulo) {
+        <div class="cartao">
+          <h2>{{ g.titulo }}</h2>
+          @if (g.itens.length === 0) {
+            <p class="vazio">Sem dados no período.</p>
+          } @else {
+            <ul class="barras">
+              @for (item of g.itens; track $index) {
+                <li>
+                  <span class="rotulo" [title]="item.rotulo">{{ item.rotulo }}</span>
+                  <span class="trilho">
+                    <span class="barra" [style.width.%]="largura(item.valor, g.itens)"></span>
+                  </span>
+                  <span class="valor">{{ formatar(item.valor, g.formato) }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    </section>
+
+    @for (t of relatorio()!.tabelas; track t.titulo) {
+      <section class="cartao tabela">
+        <h2>{{ t.titulo }}</h2>
+        @if (t.linhas.length === 0) {
+          <p class="vazio">Sem dados no período.</p>
+        } @else {
+          <div class="rolagem">
+            <table>
+              <thead>
+                <tr>
+                  @for (c of t.colunas; track c.chave) {
+                    <th [class.numero]="c.formato !== 'texto'">{{ c.rotulo }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (linha of t.linhas; track $index) {
+                  <tr>
+                    @for (c of t.colunas; track c.chave) {
+                      <td [class.numero]="c.formato !== 'texto'">{{ formatar(linha[c.chave], c.formato) }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  </div>
+}

@@ -130,6 +130,40 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'relatorios',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('relatorios') },
+          {
+            path: 'financeiro',
+            title: 'Relatório financeiro',
+            data: { tipo: 'financeiro' },
+            canActivate: [subabaGuard('relatorios/financeiro')],
+            loadComponent: () => import('./relatorios/relatorio-page').then((m) => m.RelatorioPage),
+          },
+          {
+            path: 'comercial',
+            title: 'Relatório comercial',
+            data: { tipo: 'comercial' },
+            canActivate: [subabaGuard('relatorios/comercial')],
+            loadComponent: () => import('./relatorios/relatorio-page').then((m) => m.RelatorioPage),
+          },
+          {
+            path: 'estoque',
+            title: 'Relatório de estoque',
+            data: { tipo: 'estoque' },
+            canActivate: [subabaGuard('relatorios/estoque')],
+            loadComponent: () => import('./relatorios/relatorio-page').then((m) => m.RelatorioPage),
+          },
+          {
+            path: 'atendimento',
+            title: 'Relatório de atendimento',
+            data: { tipo: 'atendimento' },
+            canActivate: [subabaGuard('relatorios/atendimento')],
+            loadComponent: () => import('./relatorios/relatorio-page').then((m) => m.RelatorioPage),
+          },
+        ],
+      },
+      {
         path: 'configuracoes',
         children: [
           { path: '', pathMatch: 'full', redirectTo: primeiraSubaba('configuracoes') },
