@@ -30,6 +30,8 @@ export interface AcaoCadastro<T> {
   icone: string;
   rotulo: string;
   executar: (item: T) => void;
+  /** Sem a função, a ação aparece em todas as linhas. */
+  visivel?: (item: T) => boolean;
 }
 
 export type FonteCadastro<T> = (filtro: FiltroCadastro, pagina: number, tamanho: number) => Observable<Pagina<T>>;
@@ -59,7 +61,7 @@ export type FonteCadastro<T> = (filtro: FiltroCadastro, pagina: number, tamanho:
           <p class="subtitulo">{{ subtitulo() }}</p>
         }
       </div>
-      @if (podeEditar()) {
+      @if (podeCriar() ?? podeEditar()) {
         <button mat-flat-button type="button" (click)="novo.emit()">
           <mat-icon>add</mat-icon>
           {{ rotuloNovo() }}
@@ -119,6 +121,7 @@ export type FonteCadastro<T> = (filtro: FiltroCadastro, pagina: number, tamanho:
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let item" class="acoes">
               @for (acao of acoesExtras(); track acao.rotulo) {
+                @if (!acao.visivel || acao.visivel(item)) {
                 <button
                   mat-icon-button
                   type="button"
@@ -128,6 +131,7 @@ export type FonteCadastro<T> = (filtro: FiltroCadastro, pagina: number, tamanho:
                 >
                   <mat-icon>{{ acao.icone }}</mat-icon>
                 </button>
+                }
               }
               @if (podeAbrir()) {
                 <button mat-icon-button type="button" matTooltip="Abrir" aria-label="Abrir" (click)="abrir.emit(item)">
@@ -147,7 +151,7 @@ export type FonteCadastro<T> = (filtro: FiltroCadastro, pagina: number, tamanho:
             </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="nomesDasColunas()"></tr>
-          <tr mat-row *matRowDef="let row; columns: nomesDasColunas()" (dblclick)="podeAbrir() ? abrir.emit(row) : editar.emit(row)"></tr>
+          <tr mat-row *matRowDef="let row; columns: nomesDasColunas()" (dblclick)="podeAbrir() ? abrir.emit(row) : podeEditar() && editar.emit(row)"></tr>
         </table>
         <mat-paginator
           [length]="total()"
@@ -250,6 +254,8 @@ export class ListaCadastro<T> implements OnInit {
   readonly colunas = input.required<ColunaCadastro<T>[]>();
   readonly fonte = input.required<FonteCadastro<T>>();
   readonly podeEditar = input(true);
+  /** Sem valor, segue `podeEditar`. */
+  readonly podeCriar = input<boolean | undefined>(undefined);
   readonly podeExcluir = input(true);
   readonly podeAbrir = input(false);
   readonly filtrarAtivos = input(true);

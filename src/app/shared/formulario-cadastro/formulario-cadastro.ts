@@ -15,7 +15,20 @@ import { Observable, finalize } from 'rxjs';
 import { ProblemDetail } from '../../core/supabase/erros';
 import { PROVEDORES_DE_DATA } from '../datas/data-iso.adapter';
 
-export type TipoCampo = 'texto' | 'textarea' | 'email' | 'numero' | 'data' | 'select' | 'multipla' | 'toggle' | 'cor';
+export type TipoCampo = 'texto' | 'textarea' | 'email' | 'numero' | 'data' | 'datahora' | 'select' | 'multipla' | 'toggle' | 'cor';
+
+/** `2026-11-10T13:30:00+00:00` vira `2026-11-10T10:30` no horário local, o formato do `datetime-local`. */
+export function paraDataHoraLocal(valor: unknown): string | null {
+  if (typeof valor !== 'string' || !valor) {
+    return null;
+  }
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) {
+    return null;
+  }
+  const local = new Date(data.getTime() - data.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 
 export interface OpcaoCampo {
   valor: unknown;
@@ -45,13 +58,15 @@ export interface FormularioCadastroData<T> {
   campos: CampoCadastro[];
   valores?: Record<string, unknown>;
   textoSalvar?: string;
-  /** Recebe os valores já normalizados (textos aparados, vazios como null) e grava na API. */
+  /** Tabela do registro: com ela, os campos extras configurados entram no fim do formulário (coluna `extras`). */
+  entidade?: string;
+  /** Recebe os valores já normalizados (textos aparados, vazios como null) e grava no banco. */
   salvar: (valores: Record<string, unknown>) => Observable<T>;
 }
 
 /**
- * Diálogo de cadastro montado a partir da lista de campos. Erros de campo devolvidos pela API (400) aparecem
- * embaixo do campo correspondente; os demais erros são avisados pelo interceptor.
+ * Diálogo de cadastro montado a partir da lista de campos. Erros de campo (400) aparecem embaixo do campo
+ * correspondente; os demais já foram avisados ao traduzir o erro do banco.
  */
 @Component({
   selector: 'app-formulario-cadastro',
@@ -211,7 +226,7 @@ export class FormularioCadastro<T = unknown> {
   );
 
   protected tipoDoInput(campo: CampoCadastro): string {
-    const tipos: Record<string, string> = { email: 'email', numero: 'number', cor: 'color' };
+    const tipos: Record<string, string> = { email: 'email', numero: 'number', cor: 'color', datahora: 'datetime-local' };
     return tipos[campo.tipo ?? 'texto'] ?? 'text';
   }
 
@@ -278,6 +293,9 @@ export class FormularioCadastro<T = unknown> {
     if (campo.tipo === 'multipla') {
       return Array.isArray(valor) ? [...valor] : [];
     }
+    if (campo.tipo === 'datahora') {
+      return paraDataHoraLocal(valor) ?? '';
+    }
     if (campo.tipo === 'select' || campo.tipo === 'numero' || campo.tipo === 'data') {
       return valor ?? null;
     }
@@ -312,6 +330,9 @@ export class FormularioCadastro<T = unknown> {
   }
 
   private normalizar(campo: CampoCadastro, valor: unknown): unknown {
+    if (campo.tipo === 'datahora') {
+      return typeof valor === 'string' && valor ? new Date(valor).toISOString() : null;
+    }
     if (typeof valor === 'string') {
       const texto = valor.trim();
       return texto === '' ? null : texto;

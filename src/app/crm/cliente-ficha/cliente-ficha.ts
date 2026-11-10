@@ -8,6 +8,10 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { Observable, catchError, map, of } from 'rxjs';
 import { UsuarioOpcao } from '../../demandas/demanda.model';
 import { Conta, formatarDocumento } from '../../financeiro/financeiro.model';
+import { PainelAnexos } from '../../shared/anexos/painel-anexos';
+import { HistoricoAuditoria, valorLegivel } from '../../shared/auditoria/historico-auditoria';
+import { CamposExtrasService } from '../../shared/campos-extras/campos-extras.service';
+import { SeletorMarcadores } from '../../shared/marcadores/seletor-marcadores';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { Cliente, ROTULO_DO_STATUS, Reclamacao, TipoInteracao } from '../crm.model';
 import { CrmService } from '../crm.service';
@@ -25,7 +29,19 @@ export interface ClienteFichaData {
 /** Ficha do cliente: dados, interações, reclamações e contas a receber. */
 @Component({
   selector: 'app-cliente-ficha',
-  imports: [CurrencyPipe, DatePipe, MatButtonModule, MatDialogModule, MatIconModule, MatTabsModule, Interacoes, Skeleton],
+  imports: [
+    CurrencyPipe,
+    DatePipe,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatTabsModule,
+    HistoricoAuditoria,
+    Interacoes,
+    PainelAnexos,
+    SeletorMarcadores,
+    Skeleton,
+  ],
   template: `
     <header class="cabecalho">
       <div>
@@ -55,6 +71,17 @@ export interface ClienteFichaData {
           @if (cliente().observacoes) {
             <p class="observacoes">{{ cliente().observacoes }}</p>
           }
+          @if (extras().length) {
+            <dl class="dados">
+              @for (linha of extras(); track linha[0]) {
+                <div>
+                  <dt>{{ linha[0] }}</dt>
+                  <dd>{{ linha[1] }}</dd>
+                </div>
+              }
+            </dl>
+          }
+          <app-seletor-marcadores entidade="clientes" [registroId]="cliente().id" [podeEditar]="data.podeEditar" />
           @if (data.podeEditar) {
             <button mat-stroked-button type="button" (click)="editar()">
               <mat-icon>edit</mat-icon>
@@ -131,6 +158,16 @@ export interface ClienteFichaData {
             </ng-template>
           </mat-tab>
         }
+        <mat-tab label="Arquivos">
+          <ng-template matTabContent>
+            <app-painel-anexos entidade="clientes" [registroId]="cliente().id" [podeEditar]="data.podeEditar" />
+          </ng-template>
+        </mat-tab>
+        <mat-tab label="Histórico">
+          <ng-template matTabContent>
+            <app-historico-auditoria tabela="clientes" [registroId]="cliente().id" />
+          </ng-template>
+        </mat-tab>
       </mat-tab-group>
     </mat-dialog-content>
   `,
@@ -272,6 +309,15 @@ export class ClienteFicha {
       ['Origem', c.origem],
       ['Responsável', c.responsavelId ? (this.data.pessoas.get(c.responsavelId)?.nome ?? 'Usuário removido') : null],
     ] as [string, string | null][];
+  });
+
+  private readonly camposExtras = toSignal(inject(CamposExtrasService).ativos('clientes'), { initialValue: [] });
+
+  protected readonly extras = computed(() => {
+    const gravados = this.cliente().extras ?? {};
+    return this.camposExtras()
+      .filter((campo) => gravados[campo.chave] !== undefined && gravados[campo.chave] !== null)
+      .map((campo) => [campo.rotulo, valorLegivel(gravados[campo.chave])] as [string, string]);
   });
 
   protected readonly carregarInteracoes = () => this.crm.interacoesDoCliente(this.data.cliente.id);

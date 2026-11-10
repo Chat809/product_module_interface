@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { EMPTY, Observable, finalize, of, switchMap } from 'rxjs';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { UsuarioOpcao } from '../../demandas/demanda.model';
+import { PainelAnexos } from '../../shared/anexos/painel-anexos';
+import { SeletorMarcadores } from '../../shared/marcadores/seletor-marcadores';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { TextoDialog, TextoDialogData } from '../../shared/texto-dialog/texto-dialog';
 import {
@@ -74,7 +76,18 @@ export function mudarStatus(
 /** Fecha com `true` quando a reclamação mudou, para a tela recarregar. */
 @Component({
   selector: 'app-reclamacao-detalhe',
-  imports: [DatePipe, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, Skeleton],
+  imports: [
+    DatePipe,
+    FormsModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    PainelAnexos,
+    SeletorMarcadores,
+    Skeleton,
+  ],
   template: `
     <header class="cabecalho">
       <div>
@@ -108,6 +121,7 @@ export function mudarStatus(
         <h3>Solução</h3>
         <p class="texto solucao">{{ reclamacao().solucao }}</p>
       }
+      <app-seletor-marcadores entidade="reclamacoes" [registroId]="reclamacao().id" />
 
       <div class="acoes">
         @for (acao of acoes(); track acao.status) {
@@ -121,6 +135,9 @@ export function mudarStatus(
           Editar
         </button>
       </div>
+
+      <h3>Arquivos</h3>
+      <app-painel-anexos entidade="reclamacoes" [registroId]="reclamacao().id" />
 
       <h3>Histórico</h3>
       @if (historico() === null) {

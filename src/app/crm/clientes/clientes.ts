@@ -137,6 +137,7 @@ export class Clientes {
     return this.dialogos.formulario(
       {
         titulo: cliente ? 'Editar cliente' : 'Novo cliente',
+        entidade: 'clientes',
         campos: camposDoCliente(this.responsaveis(), this.origens()),
         valores: cliente
           ? { ...cliente, documento: formatarDocumento(cliente.documento) }

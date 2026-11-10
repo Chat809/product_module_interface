@@ -65,6 +65,7 @@ export class Fornecedores {
       .formulario(
         {
           titulo: fornecedor ? 'Editar fornecedor' : 'Novo fornecedor',
+          entidade: 'fornecedores',
           campos: CAMPOS,
           valores: fornecedor ? { ...fornecedor, documento: formatarDocumento(fornecedor.documento) } : undefined,
           salvar: (dados) => this.service.salvarFornecedor(fornecedor?.id ?? null, dados),

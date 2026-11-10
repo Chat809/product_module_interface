@@ -23,6 +23,40 @@ interface ErroAuth {
   message?: string;
 }
 
+/** Códigos curtos levantados pelas funções do banco (`raise ... message = 'codigo'`). */
+const MENSAGENS_DO_BANCO: Record<string, string> = {
+  conta_ja_parcelada: 'Esta conta já foi parcelada.',
+  conta_nao_encontrada: 'Conta não encontrada.',
+  conta_nao_pendente: 'Só contas pendentes podem passar por esta operação.',
+  credito_insuficiente: 'O cliente não tem crédito suficiente.',
+  decisao_invalida: 'Escolha aprovar ou recusar.',
+  estoque_insuficiente: 'Estoque insuficiente para esta saída.',
+  fatura_fechada: 'A fatura deste gasto já foi fechada.',
+  fatura_ja_fechada: 'Esta fatura já foi fechada.',
+  fatura_nao_encontrada: 'Fatura não encontrada.',
+  fatura_sem_gastos: 'A fatura não tem gastos para fechar.',
+  forma_pagamento_invalida: 'Forma de pagamento inválida.',
+  link_invalido: 'Este link expirou ou não está mais disponível.',
+  parcelas_invalidas: 'Informe de 2 a 120 parcelas.',
+  participante_inativo: 'Este cliente não está mais ativo na jornada.',
+  pedido_encerrado: 'Este pedido já foi faturado ou cancelado.',
+  pedido_nao_encontrado: 'Pedido não encontrado.',
+  pedido_sem_valor: 'O pedido não tem itens com valor.',
+  periodo_invalido: 'O período informado é inválido.',
+  proposta_encerrada: 'Esta proposta já foi aprovada ou recusada.',
+  proposta_nao_encontrada: 'Proposta não encontrada.',
+  proposta_sem_cliente: 'Ligue a proposta a um cliente (ou a um lead convertido) antes de aprovar.',
+  proposta_sem_itens: 'Inclua ao menos um item na proposta antes de aprovar.',
+  proposta_vencida: 'A proposta passou da validade.',
+  quantidade_invalida: 'Quantidade inválida.',
+  rateio_acima_de_100: 'A soma do rateio não pode passar de 100%.',
+  sem_permissao: 'Você não tem permissão para esta ação.',
+  sequencia_inexistente: 'A numeração deste documento não está configurada.',
+  tipo_invalido: 'Tipo inválido.',
+  transferencia_mesma_conta: 'Escolha contas de origem e destino diferentes.',
+  vaga_indisponivel: 'Esta vaga não está mais aberta.',
+};
+
 function resposta(status: number, detail: string, erros?: ProblemDetail['erros']): HttpErrorResponse {
   return new HttpErrorResponse({ status, statusText: detail, error: { status, detail, erros } satisfies ProblemDetail });
 }
@@ -44,7 +78,7 @@ function colunaNaMensagem(mensagem: string): string | null {
 
 function doPostgrest(erro: ErroPostgrest): HttpErrorResponse {
   const codigo = erro.code ?? '';
-  const mensagem = erro.message ?? '';
+  const mensagem = MENSAGENS_DO_BANCO[erro.message ?? ''] ?? erro.message ?? '';
   switch (codigo) {
     case '23505': {
       const campo = colunaDaChave(erro.details);

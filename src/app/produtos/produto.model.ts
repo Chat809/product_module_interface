@@ -27,6 +27,7 @@ export interface Produto {
   quantidadeEmEstoque: number;
   /** Inativos continuam no catálogo, mas saem dos indicadores do dashboard. */
   ativo: boolean;
+  extras?: Record<string, unknown> | null;
   criadoEm: string;
   atualizadoEm: string;
   /** Usada no PUT para a API recusar (409) a edição de um produto alterado por outra pessoa. */
@@ -45,6 +46,7 @@ export interface ProdutoRequest {
   quantidadeEmEstoque: number;
   ativo: boolean;
   versao?: number;
+  extras?: Record<string, unknown>;
 }
 
 export type { Pagina } from '../core/supabase/repositorio';

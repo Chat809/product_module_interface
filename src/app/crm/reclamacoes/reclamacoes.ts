@@ -245,6 +245,7 @@ export class Reclamacoes implements OnInit {
     return this.dialogos.formulario(
       {
         titulo: reclamacao ? `Editar ${reclamacao.protocolo}` : 'Nova reclamação',
+        entidade: 'reclamacoes',
         campos,
         valores: reclamacao ? { ...reclamacao } : { prioridade: 'MEDIA' },
         textoSalvar: reclamacao ? 'Salvar' : 'Abrir reclamação',

@@ -13,6 +13,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { catchError, filter, finalize, merge, of } from 'rxjs';
 import { Notificacao } from '../../core/feedback/notificacao.service';
 import { ProblemDetail } from '../../core/supabase/erros';
+import { CamposExtras, extrasDoFormulario } from '../../shared/campos-extras/campos-extras';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { SomenteNumeros } from '../../shared/somente-numeros/somente-numeros';
 import { Produto, ProdutoRequest, UNIDADES, UnidadeMedida } from '../produto.model';
@@ -65,6 +66,7 @@ const MENSAGENS: Record<Campo, [validador: string, mensagem: string][]> = {
     MatSelectModule,
     MatSlideToggleModule,
     SomenteNumeros,
+    CamposExtras,
   ],
   templateUrl: './produto-form.html',
   styleUrl: './produto-form.scss',
@@ -159,6 +161,7 @@ export class ProdutoFormDialog {
       custo: valor.custo ?? null,
       quantidadeEmEstoque: valor.quantidadeEmEstoque as number,
       ativo: valor.ativo,
+      extras: extrasDoFormulario(this.form, this.produto?.extras),
     };
     const requisicao = this.produto
       ? this.produtoService.atualizar(this.produto.id, { ...dados, versao: this.produto.versao })

@@ -341,11 +341,17 @@ export class Leads implements OnInit {
       { chave: 'proximaAcao', rotulo: 'Próxima ação', max: 200, meia: true },
       { chave: 'proximaAcaoEm', rotulo: 'Data da próxima ação', tipo: 'data', meia: true },
       { chave: 'observacoes', rotulo: 'Observações', tipo: 'textarea', max: 2000 },
+      { chave: 'utmSource', rotulo: 'UTM source', max: 150, meia: true },
+      { chave: 'utmMedium', rotulo: 'UTM medium', max: 150, meia: true },
+      { chave: 'utmCampaign', rotulo: 'UTM campaign', max: 150, meia: true },
+      { chave: 'utmTerm', rotulo: 'UTM term', max: 150, meia: true },
+      { chave: 'utmContent', rotulo: 'UTM content', max: 150, meia: true },
     ];
     const primeira = this.etapasAtivas().find((e) => e.tipo === 'ABERTA');
     return this.dialogos.formulario(
       {
         titulo: lead ? 'Editar lead' : 'Novo lead',
+        entidade: 'leads',
         campos,
         valores: lead
           ? { ...lead }

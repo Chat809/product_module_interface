@@ -90,6 +90,8 @@
       Produto ativo (inativos ficam fora dos indicadores do dashboard)
     </mat-slide-toggle>
 
+    <app-campos-extras entidade="produtos" [form]="form" [gravados]="produto?.extras" />
+
     @if (editando) {
       <p class="dica">
         <mat-icon>info</mat-icon>

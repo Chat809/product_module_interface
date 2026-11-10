@@ -23,6 +23,7 @@ export interface Cliente {
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
+  extras?: Record<string, unknown>;
 }
 
 export interface CrmEtapa {
@@ -57,6 +58,12 @@ export interface Lead {
   ordem: number;
   clienteId: string | null;
   convertidoEm: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
+  extras?: Record<string, unknown>;
   criadoEm: string;
   atualizadoEm: string;
 }

@@ -6,6 +6,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Observable } from 'rxjs';
 import { UsuarioOpcao } from '../../demandas/demanda.model';
+import { PainelAnexos } from '../../shared/anexos/painel-anexos';
+import { HistoricoAuditoria } from '../../shared/auditoria/historico-auditoria';
+import { SeletorMarcadores } from '../../shared/marcadores/seletor-marcadores';
 import { CrmEtapa, CrmOrigem, Lead, TipoInteracao } from '../crm.model';
 import { CrmService } from '../crm.service';
 import { Interacoes } from '../interacoes/interacoes';
@@ -23,7 +26,18 @@ export interface LeadDetalheData {
 /** Fecha com `true` quando o lead mudou (edição, conversão ou exclusão), para a tela recarregar. */
 @Component({
   selector: 'app-lead-detalhe',
-  imports: [CurrencyPipe, DatePipe, MatButtonModule, MatDialogModule, MatIconModule, MatTabsModule, Interacoes],
+  imports: [
+    CurrencyPipe,
+    DatePipe,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatTabsModule,
+    HistoricoAuditoria,
+    Interacoes,
+    PainelAnexos,
+    SeletorMarcadores,
+  ],
   template: `
     <header class="cabecalho">
       <div>
@@ -72,10 +86,14 @@ export interface LeadDetalheData {
               <div><dt>Motivo da perda</dt><dd>{{ lead().motivoPerda }}</dd></div>
             }
             <div><dt>Criado em</dt><dd>{{ lead().criadoEm | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+            @if (campanha()) {
+              <div><dt>Campanha (UTM)</dt><dd>{{ campanha() }}</dd></div>
+            }
           </dl>
           @if (lead().observacoes) {
             <p class="observacoes">{{ lead().observacoes }}</p>
           }
+          <app-seletor-marcadores entidade="leads" [registroId]="lead().id" />
           <div class="acoes">
             <button mat-stroked-button type="button" (click)="editar()">
               <mat-icon>edit</mat-icon>
@@ -97,6 +115,16 @@ export interface LeadDetalheData {
         <mat-tab label="Interações">
           <ng-template matTabContent>
             <app-interacoes [carregar]="carregarInteracoes" [salvar]="registrarInteracao" [pessoas]="data.pessoas" />
+          </ng-template>
+        </mat-tab>
+        <mat-tab label="Arquivos">
+          <ng-template matTabContent>
+            <app-painel-anexos entidade="leads" [registroId]="lead().id" />
+          </ng-template>
+        </mat-tab>
+        <mat-tab label="Histórico">
+          <ng-template matTabContent>
+            <app-historico-auditoria tabela="leads" [registroId]="lead().id" />
           </ng-template>
         </mat-tab>
       </mat-tab-group>
@@ -192,6 +220,10 @@ export class LeadDetalhe {
 
   protected readonly etapa = computed(() => this.data.etapas.find((e) => e.id === this.lead().etapaId));
   protected readonly origem = computed(() => this.data.origens.find((o) => o.id === this.lead().origemId)?.nome);
+  protected readonly campanha = computed(() => {
+    const l = this.lead();
+    return [l.utmSource, l.utmMedium, l.utmCampaign, l.utmTerm, l.utmContent].filter(Boolean).join(' · ');
+  });
   protected readonly responsavel = computed(() => {
     const id = this.lead().responsavelId;
     return id ? (this.data.pessoas.get(id)?.nome ?? 'Usuário removido') : null;

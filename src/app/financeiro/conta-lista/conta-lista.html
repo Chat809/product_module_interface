@@ -152,9 +152,27 @@
                 <mat-icon>edit</mat-icon>
                 <span>Editar</span>
               </button>
+              @if (!conta.parcelamentoId) {
+                <button mat-menu-item (click)="parcelar(conta)">
+                  <mat-icon>calendar_view_month</mat-icon>
+                  <span>Parcelar</span>
+                </button>
+              }
+              @if (!conta.recorrenciaId) {
+                <button mat-menu-item (click)="tornarRecorrente(conta)">
+                  <mat-icon>event_repeat</mat-icon>
+                  <span>Tornar recorrente</span>
+                </button>
+              }
               <button mat-menu-item (click)="cancelar(conta)">
                 <mat-icon>block</mat-icon>
                 <span>Cancelar</span>
+              </button>
+            }
+            @if (conta.status !== 'CANCELADO') {
+              <button mat-menu-item (click)="ratear(conta)">
+                <mat-icon>pie_chart</mat-icon>
+                <span>Rateio</span>
               </button>
             }
             <button mat-menu-item (click)="excluir(conta)">
